@@ -1,0 +1,19 @@
+services:
+  gopher-server:
+    build:
+      context: .
+      dockerfile: ./compose/.server.dockerfile
+    image: gopher-server:latest
+    container_name: gopher-server
+    env_file:
+      - ./.envs/.server.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app:z
+    networks:
+      - gopher-network
+
+networks:
+  gopher-network:
+    driver: bridge
