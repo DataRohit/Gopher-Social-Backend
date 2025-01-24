@@ -30,7 +30,7 @@ help:
 .PHONY: docker-build
 docker-build:
 	@echo "${GREEN}${ROCKET} Building and starting Docker containers...${NC}"
-	docker-compose up -d --build
+	docker compose up -d --build
 	@echo "${GREEN}${CHECK} Docker containers are up and running!${NC}"
 
 # 🗑️ Clean Docker Resources
@@ -38,7 +38,7 @@ docker-build:
 docker-clean:
 	@echo "${YELLOW}${TRASH} Cleaning up Docker resources...${NC}"
 	@echo "${YELLOW}  - Stopping and removing containers...${NC}"
-	docker-compose down --remove-orphans
+	docker compose down --remove-orphans
 	@echo "${YELLOW}  - Removing unused images...${NC}"
 	docker image prune -af
 	@echo "${YELLOW}  - Removing unused volumes...${NC}"

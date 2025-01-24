@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,7 @@ import (
 	_ "github.com/datarohit/gopher-social-backend/docs"
 	"github.com/datarohit/gopher-social-backend/helpers"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -41,8 +41,9 @@ var (
 func main() {
 	gin.SetMode(SERVER_MODE)
 
-	router := gin.New()
+	logger := helpers.NewLogger()
 
+	router := gin.New()
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &http.Server{
@@ -55,20 +56,20 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server Failed to Start: %v", err)
+			logger.WithFields(logrus.Fields{"error": err}).Error("Server Failed to Start!")
 		}
 	}()
-	log.Printf("Server is Running on Port %s", SERVER_PORT)
+	logger.WithFields(logrus.Fields{"mode": SERVER_MODE, "port": SERVER_PORT}).Info("Server Started Successfully!")
 
 	<-quit
-	log.Printf("Shutdown Signal Received, Exiting Gracefully...")
+	logger.WithFields(logrus.Fields{"signal": "SIGINT"}).Info("Shutdown Signal Received, Exiting Gracefully...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Forced to Shutdown: %v", err)
+		logger.WithFields(logrus.Fields{"error": err}).Error("Server Forced to Shutdown!")
 	}
 
-	log.Printf("Server Exited Cleanly!")
+	logger.WithFields(logrus.Fields{"mode": SERVER_MODE}).Info("Server Shutdown Successfully!")
 }
