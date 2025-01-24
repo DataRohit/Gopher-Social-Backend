@@ -1,4 +1,20 @@
+basePath: /api/v1
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: rohit.vilas.ingole@gmail.com
+    name: Rohit Vilas Ingole
+  description: This is the API for Gopher Social, a social media platform for Gophers.
+  license:
+    name: MIT License
+    url: https://github.com/DataRohit/Gopher-Social-Backend/blob/master/license
+  title: Gopher Social API
+  version: "1.0"
 paths: {}
+securityDefinitions:
+  BasicAuth:
+    type: basic
 swagger: "2.0"

@@ -9,8 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/datarohit/gopher-social-backend/docs"
 	"github.com/datarohit/gopher-social-backend/helpers"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var (
@@ -18,10 +21,29 @@ var (
 	SERVER_PORT = helpers.GetEnv("SERVER_PORT", ":8080")
 )
 
+// @title           Gopher Social API
+// @version         1.0
+// @description     This is the API for Gopher Social, a social media platform for Gophers.
+
+// @contact.name   Rohit Vilas Ingole
+// @contact.email  rohit.vilas.ingole@gmail.com
+
+// @license.name  MIT License
+// @license.url   https://github.com/DataRohit/Gopher-Social-Backend/blob/master/license
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.basic  BasicAuth
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func main() {
 	gin.SetMode(SERVER_MODE)
 
 	router := gin.New()
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &http.Server{
 		Addr:    SERVER_PORT,

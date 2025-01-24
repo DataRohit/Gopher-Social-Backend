@@ -1,7 +1,28 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "This is the API for Gopher Social, a social media platform for Gophers.",
+        "title": "Gopher Social API",
+        "contact": {
+            "name": "Rohit Vilas Ingole",
+            "email": "rohit.vilas.ingole@gmail.com"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://github.com/DataRohit/Gopher-Social-Backend/blob/master/license"
+        },
+        "version": "1.0"
     },
-    "paths": {}
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {},
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
+    }
 }
