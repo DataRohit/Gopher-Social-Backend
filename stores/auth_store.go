@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/datarohit/gopher-social-backend/helpers"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -72,8 +71,6 @@ func (as *AuthStore) CreateUser(ctx context.Context, user *models.User) (*models
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	createdUser.CreatedAt = helpers.ConvertToAsiaMumbaiTime(createdUser.CreatedAt)
-	createdUser.UpdatedAt = helpers.ConvertToAsiaMumbaiTime(createdUser.UpdatedAt)
 
 	return &createdUser, nil
 }
@@ -102,8 +99,7 @@ func (as *AuthStore) GetUserByUsernameOrEmail(ctx context.Context, identifier st
 		}
 		return nil, fmt.Errorf("failed to get user by username or email: %w", err)
 	}
-	user.CreatedAt = helpers.ConvertToAsiaMumbaiTime(user.CreatedAt)
-	user.UpdatedAt = helpers.ConvertToAsiaMumbaiTime(user.UpdatedAt)
+
 	return &user, nil
 }
 
@@ -131,8 +127,7 @@ func (as *AuthStore) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Use
 		}
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
 	}
-	user.CreatedAt = helpers.ConvertToAsiaMumbaiTime(user.CreatedAt)
-	user.UpdatedAt = helpers.ConvertToAsiaMumbaiTime(user.UpdatedAt)
+
 	return &user, nil
 }
 
@@ -189,7 +184,6 @@ func (as *AuthStore) ValidatePasswordResetToken(ctx context.Context, tokenString
 		return uuid.Nil, fmt.Errorf("failed to retrieve password reset token: %w", err)
 	}
 
-	expiryTime = helpers.ConvertToAsiaMumbaiTime(expiryTime)
 	if currentTime.After(expiryTime) {
 		return uuid.Nil, ErrInvalidOrExpiredToken
 	}

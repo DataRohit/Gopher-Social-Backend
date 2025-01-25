@@ -410,7 +410,7 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	expiryTime := helpers.ConvertToAsiaMumbaiTime(time.Now().Add(time.Minute * 15))
+	expiryTime := time.Now().Add(time.Minute * 15)
 	err = ac.authStore.CreatePasswordResetToken(c, user.ID, resetToken, expiryTime)
 	if err != nil {
 		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Save Password Reset Token to Store")
@@ -466,7 +466,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 	// No need to bind token from body anymore
 	// req.Token = token
 
-	userID, err := ac.authStore.ValidatePasswordResetToken(c, token, helpers.ConvertToAsiaMumbaiTime(time.Now()))
+	userID, err := ac.authStore.ValidatePasswordResetToken(c, token, time.Now())
 	if err != nil {
 		if errors.Is(err, stores.ErrInvalidOrExpiredToken) {
 			ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Error("Invalid or Expired Reset Token")
