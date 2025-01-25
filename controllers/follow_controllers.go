@@ -57,7 +57,7 @@ func NewFollowController(authStore *stores.AuthStore, profileStore *stores.Profi
 func (fc *FollowController) FollowUser(c *gin.Context) {
 	followerUser, exists := c.Get("user")
 	if !exists {
-		fc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
+		fc.logger.Error("User not Found in Context. Middleware Misconfiguration")
 		c.JSON(http.StatusUnauthorized, models.FollowUserErrorResponse{
 			Message: "Unauthorized",
 			Error:   "user not authenticated",
@@ -160,7 +160,7 @@ func (fc *FollowController) FollowUser(c *gin.Context) {
 func (fc *FollowController) UnfollowUser(c *gin.Context) {
 	followerUser, exists := c.Get("user")
 	if !exists {
-		fc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
+		fc.logger.Error("User not Found in Context. Middleware Misconfiguration")
 		c.JSON(http.StatusUnauthorized, models.UnfollowUserErrorResponse{
 			Message: "Unauthorized",
 			Error:   "user not authenticated",

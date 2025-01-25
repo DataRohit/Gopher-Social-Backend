@@ -28,7 +28,8 @@ import (
 //   - /auth/resend-activation-link (POST): Route to resend activation link.
 func AuthRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
-	authController := controllers.NewAuthController(authStore, logger)
+	profileStore := stores.NewProfileStore(dbPool)
+	authController := controllers.NewAuthController(authStore, profileStore, logger)
 
 	authRouter := router.Group("/auth")
 	authRouter.POST("/register", authController.Register)

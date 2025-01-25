@@ -18,22 +18,25 @@ import (
 var DOMAIN = helpers.GetEnv("DOMAIN", "http://localhost:8080")
 
 type AuthController struct {
-	authStore *stores.AuthStore
-	logger    *logrus.Logger
+	authStore    *stores.AuthStore
+	profileStore *stores.ProfileStore
+	logger       *logrus.Logger
 }
 
 // NewAuthController creates a new AuthController.
 //
 // Parameters:
 //   - authStore (*stores.AuthStore): AuthStore pointer to interact with the database.
+//   - profileStore (*stores.ProfileStore): ProfileStore pointer to interact with the database.
 //   - logger (*logrus.Logger): Logrus logger pointer to log messages.
 //
 // Returns:
 //   - *AuthController: Pointer to the AuthController.
-func NewAuthController(authStore *stores.AuthStore, logger *logrus.Logger) *AuthController {
+func NewAuthController(authStore *stores.AuthStore, profileStore *stores.ProfileStore, logger *logrus.Logger) *AuthController {
 	return &AuthController{
-		authStore: authStore,
-		logger:    logger,
+		authStore:    authStore,
+		profileStore: profileStore,
+		logger:       logger,
 	}
 }
 
@@ -527,8 +530,6 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 		})
 		return
 	}
-	// No need to bind token from body anymore
-	// req.Token = token
 
 	userID, err := ac.authStore.ValidatePasswordResetToken(c, token, time.Now())
 	if err != nil {
@@ -574,7 +575,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.ResetPasswordSuccessResponse{
-		Message: "Password Reset Successfully.",
+		Message: "Password Reset Successfully",
 	})
 }
 
@@ -628,13 +629,23 @@ func (ac *AuthController) ActivateUser(c *gin.Context) {
 		return
 	}
 
+	_, err = ac.profileStore.CreateProfile(c, &models.Profile{UserID: userID})
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": userID}).Error("Failed to Create Profile for User")
+		c.JSON(http.StatusInternalServerError, models.ActivateUserErrorResponse{
+			Message: "Failed to Activate User",
+			Error:   "failed to create profile",
+		})
+		return
+	}
+
 	err = ac.authStore.InvalidateActivationToken(c, token)
 	if err != nil {
 		ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Warn("Failed to Invalidate Activation Token, But User Activation was Successful")
 	}
 
 	c.JSON(http.StatusOK, models.ActivateUserSuccessResponse{
-		Message: "User Activated Successfully.",
+		Message: "User Activated Successfully",
 	})
 }
 
@@ -708,6 +719,7 @@ func (ac *AuthController) ResendActivationLink(c *gin.Context) {
 		})
 		return
 	}
+
 	expiryTime := time.Now().Add(time.Minute * 15)
 	err = ac.authStore.CreateActivationToken(c, user.ID, activationToken, expiryTime)
 	if err != nil {
@@ -722,7 +734,7 @@ func (ac *AuthController) ResendActivationLink(c *gin.Context) {
 	activationLink := fmt.Sprintf("%s/api/v1/auth/activate?token=%s", DOMAIN, activationToken)
 
 	c.JSON(http.StatusOK, models.ResendActivationLinkSuccessResponse{
-		Message:        "Activation Link Sent Successfully.",
+		Message:        "Activation Link Sent Successfully",
 		ActivationLink: activationLink,
 	})
 }

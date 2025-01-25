@@ -711,7 +711,7 @@
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "User Activated Successfully."
+                    "example": "User Activated Successfully"
                 }
             }
         },
@@ -779,7 +779,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Password Reset Link Sent Successfully If User Exists."
+                    "example": "Password Reset Link Sent Successfully If User Exists"
                 }
             }
         },
@@ -929,7 +929,7 @@
                 },
                 "message": {
                     "type": "string",
-                    "example": "Activation Link Sent Successfully."
+                    "example": "Activation Link Sent Successfully"
                 }
             }
         },
@@ -968,7 +968,7 @@
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "Password Reset Successfully."
+                    "example": "Password Reset Successfully"
                 }
             }
         },

@@ -47,7 +47,7 @@ func NewProfileController(profileStore *stores.ProfileStore, logger *logrus.Logg
 func (pc *ProfileController) UpdateProfile(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		pc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
+		pc.logger.Error("User not Found in Context. Middleware Misconfiguration")
 		c.JSON(http.StatusUnauthorized, models.UpdateProfileErrorResponse{
 			Message: "Unauthorized",
 			Error:   "user not authenticated",
@@ -117,7 +117,7 @@ func (pc *ProfileController) UpdateProfile(c *gin.Context) {
 func (pc *ProfileController) GetLoggedInUserProfile(c *gin.Context) {
 	user, exists := c.Get("user")
 	if !exists {
-		pc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
+		pc.logger.Error("User not Found in Context. Middleware Misconfiguration")
 		c.JSON(http.StatusUnauthorized, models.GetLoggedInUserProfileErrorResponse{
 			Message: "Unauthorized",
 			Error:   "user not authenticated",

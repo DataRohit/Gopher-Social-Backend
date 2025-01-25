@@ -717,7 +717,7 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "User Activated Successfully."
+                    "example": "User Activated Successfully"
                 }
             }
         },
@@ -785,7 +785,7 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string",
-                    "example": "Password Reset Link Sent Successfully If User Exists."
+                    "example": "Password Reset Link Sent Successfully If User Exists"
                 }
             }
         },
@@ -935,7 +935,7 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string",
-                    "example": "Activation Link Sent Successfully."
+                    "example": "Activation Link Sent Successfully"
                 }
             }
         },
@@ -974,7 +974,7 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "Password Reset Successfully."
+                    "example": "Password Reset Successfully"
                 }
             }
         },

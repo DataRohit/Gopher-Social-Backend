@@ -74,7 +74,7 @@ type ForgotPasswordPayload struct {
 }
 
 type ForgotPasswordSuccessResponse struct {
-	Message string `json:"message" example:"Password Reset Link Sent Successfully If User Exists."`
+	Message string `json:"message" example:"Password Reset Link Sent Successfully If User Exists"`
 	Link    string `json:"link" example:"http://localhost:8080/api/v1/reset-password?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg"`
 }
 
@@ -90,7 +90,7 @@ type ResetPasswordPayload struct {
 }
 
 type ResetPasswordSuccessResponse struct {
-	Message string `json:"message" example:"Password Reset Successfully."`
+	Message string `json:"message" example:"Password Reset Successfully"`
 }
 
 type ResetPasswordErrorResponse struct {
@@ -100,7 +100,7 @@ type ResetPasswordErrorResponse struct {
 
 // User Activation Models
 type ActivateUserSuccessResponse struct {
-	Message string `json:"message" example:"User Activated Successfully."`
+	Message string `json:"message" example:"User Activated Successfully"`
 }
 
 type ActivateUserErrorResponse struct {
@@ -114,7 +114,7 @@ type ResendActivationLinkPayload struct {
 }
 
 type ResendActivationLinkSuccessResponse struct {
-	Message        string `json:"message" example:"Activation Link Sent Successfully."`
+	Message        string `json:"message" example:"Activation Link Sent Successfully"`
 	ActivationLink string `json:"activation_link,omitempty" example:"http://localhost:8080/api/v1/auth/activate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg"`
 }
 
