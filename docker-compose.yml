@@ -17,12 +17,12 @@ services:
       - .:/app:z
     networks:
       - gopher-network
-    # healthcheck:
-    #   test: [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/health/router" ]
-    #   interval: 5s
-    #   timeout: 5s
-    #   retries: 5
-    #   start_period: 15s
+    healthcheck:
+      test: [ "CMD", "/app/healthCheck.sh" ]
+      interval: 1m30s
+      retries: 5
+      start_period: 30s
+      timeout: 30s
     depends_on:
       gopher-redis:
         condition: service_healthy
@@ -36,10 +36,10 @@ services:
       - gopher-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 5s
+      interval: 1m30s
       retries: 5
-      start_period: 15s
+      timeout: 30s
+      start_period: 30s
 
 networks:
   gopher-network:

@@ -1,4 +1,23 @@
 basePath: /api/v1
+definitions:
+  models.RedisHealthyResponse:
+    properties:
+      status:
+        example: Redis Healthy!
+        type: string
+    type: object
+  models.RedisUnhealthyResponse:
+    properties:
+      status:
+        example: Redis Unhealthy!
+        type: string
+    type: object
+  models.RouterHealthyResponse:
+    properties:
+      status:
+        example: Router Healthy!
+        type: string
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -13,7 +32,37 @@ info:
     url: https://github.com/DataRohit/Gopher-Social-Backend/blob/master/license
   title: Gopher Social API
   version: "1.0"
-paths: {}
+paths:
+  /health/redis:
+    get:
+      description: Check if Redis connection is healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully connected to Redis
+          schema:
+            $ref: '#/definitions/models.RedisHealthyResponse'
+        "503":
+          description: Failed to connect to Redis
+          schema:
+            $ref: '#/definitions/models.RedisUnhealthyResponse'
+      summary: Redis Health Check
+      tags:
+      - health
+  /health/router:
+    get:
+      description: Check if the router is working
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully connected to router
+          schema:
+            $ref: '#/definitions/models.RouterHealthyResponse'
+      summary: Router Health Check
+      tags:
+      - health
 securityDefinitions:
   BasicAuth:
     type: basic

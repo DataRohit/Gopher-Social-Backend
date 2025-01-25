@@ -21,7 +21,83 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {},
+    "paths": {
+        "/health/redis": {
+            "get": {
+                "description": "Check if Redis connection is healthy",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Redis Health Check",
+                "responses": {
+                    "200": {
+                        "description": "Successfully connected to Redis",
+                        "schema": {
+                            "$ref": "#/definitions/models.RedisHealthyResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Failed to connect to Redis",
+                        "schema": {
+                            "$ref": "#/definitions/models.RedisUnhealthyResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health/router": {
+            "get": {
+                "description": "Check if the router is working",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Router Health Check",
+                "responses": {
+                    "200": {
+                        "description": "Successfully connected to router",
+                        "schema": {
+                            "$ref": "#/definitions/models.RouterHealthyResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.RedisHealthyResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Redis Healthy!"
+                }
+            }
+        },
+        "models.RedisUnhealthyResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Redis Unhealthy!"
+                }
+            }
+        },
+        "models.RouterHealthyResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Router Healthy!"
+                }
+            }
+        }
+    },
     "securityDefinitions": {
         "BasicAuth": {
             "type": "basic"

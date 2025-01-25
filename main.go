@@ -12,6 +12,7 @@ import (
 	_ "github.com/datarohit/gopher-social-backend/docs"
 	"github.com/datarohit/gopher-social-backend/helpers"
 	"github.com/datarohit/gopher-social-backend/middlewares"
+	"github.com/datarohit/gopher-social-backend/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
@@ -56,7 +57,10 @@ func main() {
 	router.Use(middlewares.RecovererMiddleware(logger))
 	router.Use(middlewares.CORSMiddleware())
 	router.Use(middlewares.TimeoutMiddleware(10 * time.Second))
-	router.Use(middlewares.RateLimiterMiddleware(database.RedisClient, 15, time.Minute, logger))
+	router.Use(middlewares.RateLimiterMiddleware(database.RedisClient, 120, time.Minute, logger))
+
+	apiv1 := router.Group("/api/v1")
+	routes.HealthRoutes(apiv1)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
