@@ -30,6 +30,73 @@ definitions:
         example: Router Healthy!
         type: string
     type: object
+  models.User:
+    properties:
+      banned:
+        example: false
+        type: boolean
+      created_at:
+        example: "2024-01-25T07:00:00+05:30"
+        type: string
+      email:
+        example: john.doe@example.com
+        type: string
+      followers:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+      following:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      timeout_until:
+        example: "2024-03-15T10:00:00+05:30"
+        type: string
+      updated_at:
+        example: "2024-01-25T07:00:00+05:30"
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+  models.UserRegisterErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UserRegisterPayload:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      password:
+        example: P@$$wOrd
+        maxLength: 64
+        minLength: 8
+        type: string
+      username:
+        example: john_doe
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  models.UserRegisterSuccessResponse:
+    properties:
+      message:
+        example: User registered successfully
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
@@ -45,6 +112,40 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user to the platform
+      parameters:
+      - description: Request Body for User Registration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRegisterPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully registered user
+          schema:
+            $ref: '#/definitions/models.UserRegisterSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UserRegisterErrorResponse'
+        "409":
+          description: Conflict - User already exists
+          schema:
+            $ref: '#/definitions/models.UserRegisterErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to register user
+          schema:
+            $ref: '#/definitions/models.UserRegisterErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
   /health/postgres:
     get:
       description: Check if Postgres connection is healthy

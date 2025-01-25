@@ -10,6 +10,13 @@ import (
 
 type HealthController struct{}
 
+// NewHealthController creates a new HealthController.
+//
+// Parameters:
+//   - None
+//
+// Returns:
+//   - *HealthController: Pointer to the HealthController.
 func NewHealthController() *HealthController {
 	return &HealthController{}
 }
@@ -57,8 +64,8 @@ func (hc *HealthController) HealthRedis(c *gin.Context) {
 // @Router       /health/postgres [get]
 func (hc *HealthController) HealthPostgres(c *gin.Context) {
 	if database.PostgresDB != nil {
-		db, err := database.PostgresDB.DB()
-		if err != nil || db.Ping() != nil {
+		err := database.PostgresDB.Ping(c)
+		if err != nil {
 			c.JSON(http.StatusServiceUnavailable, models.PostgresUnhealthyResponse{
 				Status: "Postgres Unhealthy!",
 			})

@@ -64,6 +64,7 @@ func main() {
 
 	apiv1 := router.Group("/api/v1")
 	routes.HealthRoutes(apiv1)
+	routes.AuthRoutes(apiv1, database.PostgresDB, logger)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

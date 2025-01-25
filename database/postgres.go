@@ -1,23 +1,23 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/datarohit/gopher-social-backend/helpers"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-var PostgresDB *gorm.DB
+var PostgresDB *pgxpool.Pool
 
-// InitPostgres initializes a connection to PostgreSQL using GORM and stores the DB connection in the PostgresDB variable.
-// It also checks if the connection was successful and logs the result.
+// InitPostgres initializes the PostgreSQL database connection pool.
+// It reads database connection parameters from environment variables or uses default values.
 //
 // Parameters:
-//   - logger (*logrus.Logger): The logger instance to log the result of the connection.
+//   - logger (*logrus.Logger): Logrus logger instance for logging.
 //
 // Returns:
 //   - None
@@ -31,52 +31,43 @@ func InitPostgres(logger *logrus.Logger) {
 
 	postgresPort, err := strconv.Atoi(postgresPortStr)
 	if err != nil {
-		postgresPort = 5432
+		logger.WithFields(logrus.Fields{"error": err, "port": postgresPortStr}).Fatal("Failed to parse PostgreSQL Port!")
+		os.Exit(1)
 	}
 
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		postgresHost, postgresPort, postgresUser, postgresPassword, postgresDBName, postgresSSLMode)
 
-	PostgresDB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"error": err}).Fatal("Failed to connect to PostgreSQL with GORM!")
+		logger.WithFields(logrus.Fields{"error": err}).Fatal("Failed to parse PostgreSQL connection string!")
 		os.Exit(1)
 	}
 
-	db, err := PostgresDB.DB()
+	PostgresDB, err = pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
-		logger.WithFields(logrus.Fields{"error": err}).Fatal("Failed to get underlying SQL DB from GORM!")
+		logger.WithFields(logrus.Fields{"error": err}).Fatal("Failed to connect to PostgreSQL!")
 		os.Exit(1)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		logger.WithFields(logrus.Fields{"error": err}).Fatal("Failed to ping PostgreSQL database!")
+	if PostgresDB == nil {
+		logger.Fatal("PostgreSQL Database connection pool failed to initialize!")
 		os.Exit(1)
 	}
-
-	logger.Info("Connected to PostgreSQL with GORM successfully!")
+	logger.Info("PostgreSQL Database Connected Successfully!")
 }
 
-// ClosePostgres closes the connection to PostgreSQL if it is not nil.
-// It also logs any errors that occur while closing the connection.
+// ClosePostgres closes the PostgreSQL database connection pool.
+// It checks if the PostgresDB instance is not nil before attempting to close the connection.
 //
 // Parameters:
-//   - logger (*logrus.Logger): The logger instance to log any errors that occur while closing the connection.
+//   - logger (*logrus.Logger): Logrus logger instance for logging.
 //
 // Returns:
 //   - None
 func ClosePostgres(logger *logrus.Logger) {
 	if PostgresDB != nil {
-		db, err := PostgresDB.DB()
-		if err != nil {
-			logger.WithFields(logrus.Fields{"error": err}).Error("Failed to get underlying SQL DB from GORM for closing!")
-			return
-		}
-		if err := db.Close(); err != nil {
-			logger.WithFields(logrus.Fields{"error": err}).Error("Error Closing PostgreSQL Connection!")
-		} else {
-			logger.Info("PostgreSQL connection closed successfully!")
-		}
+		PostgresDB.Close()
+		logger.Info("PostgreSQL Database Connection Closed Successfully!")
 	}
 }

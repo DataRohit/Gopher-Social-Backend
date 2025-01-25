@@ -1,27 +1,30 @@
 # Use the official Go image as the base image
-FROM golang:1.23.4-bullseye AS build-stage
+FROM golang:1.23.4-bullseye
 
-# Install make
+# Install essential build tools
 RUN apt-get update && apt-get install -y make curl
 
-# Set the Current Working Directory inside the container
+# Install migrate CLI (version 4.18.1) directly from GitHub release
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.1/migrate.linux-amd64.tar.gz | tar xvz \
+    && mv migrate /usr/local/bin/migrate \
+    && chmod +x /usr/local/bin/migrate
+
+# Set the working directory
 WORKDIR /app
 
-# Copy the Go Modules manifests
+# Copy Go module files first for better caching
 COPY go.mod go.sum ./
-
-# Download and cache the dependencies
 RUN go mod download
 
-# Copy the source code into the container
+# Copy the entire project
 COPY . .
 
-# Install other dependencies
-RUN go install github.com/air-verse/air@latest
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+# Install development tools
+RUN go install github.com/air-verse/air@latest \
+    && go install github.com/swaggo/swag/cmd/swag@latest
 
 # Generate Swagger documentation
 RUN make gen-docs
 
-# Run the air server
+# Start the application with air for hot-reloading
 CMD ["air", "-c", ".air.toml"]
