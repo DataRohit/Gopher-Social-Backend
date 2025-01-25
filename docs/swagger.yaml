@@ -49,6 +49,41 @@ definitions:
         example: Postgres Unhealthy!
         type: string
     type: object
+  models.Profile:
+    properties:
+      created_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
+      first_name:
+        example: John
+        type: string
+      github:
+        example: https://github.com/john_doe
+        type: string
+      google_scholar:
+        example: https://scholar.google.com/citations?user=xxxxxxxxxxxxx
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      last_name:
+        example: Doe
+        type: string
+      linkedin:
+        example: https://linkedin.com/in/john_doe
+        type: string
+      twitter:
+        example: https://twitter.com/john_doe
+        type: string
+      updated_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+      website:
+        example: https://example.com
+        type: string
+    type: object
   models.RedisHealthyResponse:
     properties:
       status:
@@ -132,6 +167,45 @@ definitions:
       status:
         example: Router Healthy!
         type: string
+    type: object
+  models.UpdateProfileErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UpdateProfilePayload:
+    properties:
+      first_name:
+        example: John
+        type: string
+      github:
+        example: https://github.com/john_doe
+        type: string
+      google_scholar:
+        example: https://scholar.google.com/citations?user=xxxxxxxxxxxxx
+        type: string
+      last_name:
+        example: Doe
+        type: string
+      linkedin:
+        example: https://linkedin.com/in/john_doe
+        type: string
+      twitter:
+        example: https://twitter.com/john_doe
+        type: string
+      website:
+        example: https://example.com
+        type: string
+    type: object
+  models.UpdateProfileSuccessResponse:
+    properties:
+      message:
+        example: Profile Updated Successfully
+        type: string
+      profile:
+        $ref: '#/definitions/models.Profile'
     type: object
   models.User:
     properties:
@@ -544,7 +618,51 @@ paths:
       summary: Router Health Check
       tags:
       - health
+  /profile/update:
+    put:
+      consumes:
+      - application/json
+      description: Updates the profile of the logged-in user.
+      parameters:
+      - description: Request Body for Profile Update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateProfilePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated profile
+          schema:
+            $ref: '#/definitions/models.UpdateProfileSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UpdateProfileErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UpdateProfileErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UpdateProfileErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to update profile
+          schema:
+            $ref: '#/definitions/models.UpdateProfileErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - profile
 securityDefinitions:
   BasicAuth:
     type: basic
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

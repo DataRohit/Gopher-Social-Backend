@@ -433,6 +433,69 @@
                     }
                 }
             }
+        },
+        "/profile/update": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the profile of the logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Update user profile",
+                "parameters": [
+                    {
+                        "description": "Request Body for Profile Update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfilePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to update profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateProfileErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -507,6 +570,54 @@
                 "status": {
                     "type": "string",
                     "example": "Postgres Unhealthy!"
+                }
+            }
+        },
+        "models.Profile": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "github": {
+                    "type": "string",
+                    "example": "https://github.com/john_doe"
+                },
+                "google_scholar": {
+                    "type": "string",
+                    "example": "https://scholar.google.com/citations?user=xxxxxxxxxxxxx"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "linkedin": {
+                    "type": "string",
+                    "example": "https://linkedin.com/in/john_doe"
+                },
+                "twitter": {
+                    "type": "string",
+                    "example": "https://twitter.com/john_doe"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "website": {
+                    "type": "string",
+                    "example": "https://example.com"
                 }
             }
         },
@@ -629,6 +740,62 @@
                 "status": {
                     "type": "string",
                     "example": "Router Healthy!"
+                }
+            }
+        },
+        "models.UpdateProfileErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateProfilePayload": {
+            "type": "object",
+            "properties": {
+                "first_name": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "github": {
+                    "type": "string",
+                    "example": "https://github.com/john_doe"
+                },
+                "google_scholar": {
+                    "type": "string",
+                    "example": "https://scholar.google.com/citations?user=xxxxxxxxxxxxx"
+                },
+                "last_name": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "linkedin": {
+                    "type": "string",
+                    "example": "https://linkedin.com/in/john_doe"
+                },
+                "twitter": {
+                    "type": "string",
+                    "example": "https://twitter.com/john_doe"
+                },
+                "website": {
+                    "type": "string",
+                    "example": "https://example.com"
+                }
+            }
+        },
+        "models.UpdateProfileSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Profile Updated Successfully"
+                },
+                "profile": {
+                    "$ref": "#/definitions/models.Profile"
                 }
             }
         },
@@ -801,6 +968,11 @@
     "securityDefinitions": {
         "BasicAuth": {
             "type": "basic"
+        },
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     },
     "externalDocs": {

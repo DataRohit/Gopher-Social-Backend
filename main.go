@@ -38,6 +38,9 @@ var (
 // @BasePath  /api/v1
 
 // @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
@@ -65,6 +68,7 @@ func main() {
 	apiv1 := router.Group("/api/v1")
 	routes.HealthRoutes(apiv1)
 	routes.AuthRoutes(apiv1, database.PostgresDB, logger)
+	routes.ProfileRoutes(apiv1, database.PostgresDB, logger) // Add profile routes
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
