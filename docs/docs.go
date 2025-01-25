@@ -616,6 +616,19 @@ const docTemplate = `{
                 }
             }
         },
+        "models.Role": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Normal User"
+                },
+                "level": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "models.RouterHealthyResponse": {
             "type": "object",
             "properties": {
@@ -634,7 +647,7 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2024-01-25T07:00:00+05:30"
+                    "example": "2025-01-25T12:34:01.159498Z"
                 },
                 "email": {
                     "type": "string",
@@ -660,13 +673,16 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "role": {
+                    "$ref": "#/definitions/models.Role"
+                },
                 "timeout_until": {
                     "type": "string",
-                    "example": "2024-03-15T10:00:00+05:30"
+                    "example": "2025-01-25T12:34:01.159498Z"
                 },
                 "updated_at": {
                     "type": "string",
-                    "example": "2024-01-25T07:00:00+05:30"
+                    "example": "2025-01-25T12:34:01.159498Z"
                 },
                 "username": {
                     "type": "string",
@@ -710,6 +726,9 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "User Logged In Successfully"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
                 }
             }
         },

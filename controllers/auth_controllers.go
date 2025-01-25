@@ -171,6 +171,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 			c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
 				Message: "User Already Logged In",
+				User:    user,
 			})
 			return
 		} else {
@@ -233,6 +234,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 					log.Printf("User Logged in Successfully (Refreshed Tokens): %v", user.ID)
 					c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
 						Message: "Login Successful",
+						User:    user,
 					})
 					return
 				}
@@ -300,6 +302,7 @@ RefreshOrNormalLogin:
 			log.Printf("User Logged in Successfully (Refreshed Tokens): %v", user.ID)
 			c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
 				Message: "Login Successful",
+				User:    user,
 			})
 			return
 		}
@@ -376,8 +379,18 @@ NormalLogin:
 	c.SetCookie("refresh_token", refreshToken, int(time.Hour*6/time.Second), "/", "", true, true)
 
 	log.Printf("User Logged in Successfully: %v", user.ID)
+	loggedInUser, err := ac.authStore.GetUserByUsernameOrEmail(c, req.Identifier)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "identifier": req.Identifier}).Error("Failed to Fetch User from Store after login")
+		c.JSON(http.StatusInternalServerError, models.UserLoginErrorResponse{
+			Message: "Login Successful",
+			Error:   "failed to fetch user for response",
+		})
+		return
+	}
 	c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
 		Message: "Login Successful",
+		User:    loggedInUser,
 	})
 }
 

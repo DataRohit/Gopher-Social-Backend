@@ -118,6 +118,15 @@ definitions:
         example: Password Reset Successfully.
         type: string
     type: object
+  models.Role:
+    properties:
+      description:
+        example: Normal User
+        type: string
+      level:
+        example: 1
+        type: integer
+    type: object
   models.RouterHealthyResponse:
     properties:
       status:
@@ -130,7 +139,7 @@ definitions:
         example: false
         type: boolean
       created_at:
-        example: "2024-01-25T07:00:00+05:30"
+        example: "2025-01-25T12:34:01.159498Z"
         type: string
       email:
         example: john.doe@example.com
@@ -149,11 +158,13 @@ definitions:
       is_active:
         example: false
         type: boolean
+      role:
+        $ref: '#/definitions/models.Role'
       timeout_until:
-        example: "2024-03-15T10:00:00+05:30"
+        example: "2025-01-25T12:34:01.159498Z"
         type: string
       updated_at:
-        example: "2024-01-25T07:00:00+05:30"
+        example: "2025-01-25T12:34:01.159498Z"
         type: string
       username:
         example: john_doe
@@ -185,6 +196,8 @@ definitions:
       message:
         example: User Logged In Successfully
         type: string
+      user:
+        $ref: '#/definitions/models.User'
     type: object
   models.UserLogoutErrorResponse:
     properties:

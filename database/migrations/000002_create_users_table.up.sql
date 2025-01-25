@@ -5,6 +5,7 @@ CREATE TABLE users (
     username VARCHAR(32) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    role_id UUID NOT NULL,
     timeout_until TIMESTAMPTZ,
     banned BOOLEAN NOT NULL DEFAULT FALSE,
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
@@ -13,7 +14,8 @@ CREATE TABLE users (
     password_reset_token TEXT,
     reset_token_expiry TIMESTAMPTZ,
     activation_token TEXT,
-    activation_token_expiry TIMESTAMPTZ
+    activation_token_expiry TIMESTAMPTZ,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()

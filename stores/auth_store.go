@@ -41,6 +41,8 @@ var ErrInvalidOrExpiredToken = errors.New("invalid or expired reset token")
 // ErrInvalidOrExpiredActivationToken is returned when an activation token is invalid or expired.
 var ErrInvalidOrExpiredActivationToken = errors.New("invalid or expired activation token")
 
+// defaultRoleLevel is the default role level for new users (Normal User - Level 1).
+const defaultRoleLevel = 1
 
 // CreateUser creates a new user in the database.
 // It checks if a user with the same username or email already exists before creating a new user.
@@ -54,8 +56,8 @@ var ErrInvalidOrExpiredActivationToken = errors.New("invalid or expired activati
 //   - error: An error if user creation fails or user already exists.
 func (as *AuthStore) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	var existingUser models.User
-	err := as.dbPool.QueryRow(ctx, `SELECT id, username, email, password_hash, timeout_until, banned, is_active, created_at, updated_at FROM users WHERE username = $1 OR email = $2`, user.Username, user.Email).Scan(
-		&existingUser.ID, &existingUser.Username, &existingUser.Email, &existingUser.PasswordHash, &existingUser.TimeoutUntil, &existingUser.Banned, &existingUser.IsActive, &existingUser.CreatedAt, &existingUser.UpdatedAt,
+	err := as.dbPool.QueryRow(ctx, `SELECT id, username, email, password_hash, role_id, timeout_until, banned, is_active, created_at, updated_at FROM users WHERE username = $1 OR email = $2`, user.Username, user.Email).Scan(
+		&existingUser.ID, &existingUser.Username, &existingUser.Email, &existingUser.PasswordHash, &existingUser.RoleID, &existingUser.TimeoutUntil, &existingUser.Banned, &existingUser.IsActive, &existingUser.CreatedAt, &existingUser.UpdatedAt,
 	)
 	if err == nil {
 		return nil, ErrUserAlreadyExists
@@ -64,13 +66,23 @@ func (as *AuthStore) CreateUser(ctx context.Context, user *models.User) (*models
 		return nil, fmt.Errorf("failed to check for existing user: %w", err)
 	}
 
+	var defaultRoleID uuid.UUID
+	err = as.dbPool.QueryRow(ctx, `SELECT id FROM roles WHERE level = $1`, defaultRoleLevel).Scan(&defaultRoleID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default role id: %w", err)
+	}
+	if defaultRoleID == uuid.Nil {
+		return nil, fmt.Errorf("default role not found for level: %d", defaultRoleLevel)
+	}
+	user.RoleID = defaultRoleID
+
 	var createdUser models.User
 	err = as.dbPool.QueryRow(ctx, `
-		INSERT INTO users (username, email, password_hash, is_active, activation_token, activation_token_expiry)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, username, email, password_hash, timeout_until, banned, is_active, created_at, updated_at, activation_token, activation_token_expiry
-		`, user.Username, user.Email, user.PasswordHash, false, user.ActivationToken, user.ActivationTokenExpiry).Scan(
-		&createdUser.ID, &createdUser.Username, &createdUser.Email, &createdUser.PasswordHash, &createdUser.TimeoutUntil, &createdUser.Banned, &createdUser.IsActive, &createdUser.CreatedAt, &createdUser.UpdatedAt, &createdUser.ActivationToken, &createdUser.ActivationTokenExpiry,
+		INSERT INTO users (username, email, password_hash, role_id, is_active, activation_token, activation_token_expiry)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, username, email, password_hash, role_id, timeout_until, banned, is_active, created_at, updated_at, activation_token, activation_token_expiry
+		`, user.Username, user.Email, user.PasswordHash, user.RoleID, false, user.ActivationToken, user.ActivationTokenExpiry).Scan(
+		&createdUser.ID, &createdUser.Username, &createdUser.Email, &createdUser.PasswordHash, &createdUser.RoleID, &createdUser.TimeoutUntil, &createdUser.Banned, &createdUser.IsActive, &createdUser.CreatedAt, &createdUser.UpdatedAt, &createdUser.ActivationToken, &createdUser.ActivationTokenExpiry,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -90,12 +102,15 @@ func (as *AuthStore) CreateUser(ctx context.Context, user *models.User) (*models
 //   - error: ErrUserNotFound if user not found or other errors during database query.
 func (as *AuthStore) GetUserByUsernameOrEmail(ctx context.Context, identifier string) (*models.User, error) {
 	var user models.User
+	user.Role = &models.Role{}
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT id, username, email, password_hash, timeout_until, banned, is_active, created_at, updated_at, password_reset_token, reset_token_expiry, activation_token, activation_token_expiry
-		FROM users
-		WHERE username = $1 OR email = $1
+		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.username = $1 OR u.email = $1
 	`, identifier).Scan(
-		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.Role.Level, &user.Role.Description,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -118,12 +133,15 @@ func (as *AuthStore) GetUserByUsernameOrEmail(ctx context.Context, identifier st
 //   - error: ErrUserNotFound if user not found or other errors during database query.
 func (as *AuthStore) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	var user models.User
+	user.Role = &models.Role{}
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT id, username, email, password_hash, timeout_until, banned, is_active, created_at, updated_at, password_reset_token, reset_token_expiry, activation_token, activation_token_expiry
-		FROM users
-		WHERE id = $1
+		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1
 	`, id).Scan(
-		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.Role.Level, &user.Role.Description,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -136,14 +154,24 @@ func (as *AuthStore) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Use
 }
 
 // GetUserByActivationToken retrieves a user from the database by activation token.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - tokenString (string): Activation token to identify the user.
+//
+// Returns:
+//   - *models.User: The retrieved user if found.
+//   - error: ErrUserNotFound if user not found or other errors during database query.
 func (as *AuthStore) GetUserByActivationToken(ctx context.Context, tokenString string) (*models.User, error) {
 	var user models.User
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT id, username, email, password_hash, timeout_until, banned, is_active, created_at, updated_at, password_reset_token, reset_token_expiry, activation_token, activation_token_expiry
-		FROM users
-		WHERE activation_token = $1
+		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.activation_token = $1
 	`, tokenString).Scan(
-		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
+		&user.Role.Level, &user.Role.Description,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -153,7 +181,6 @@ func (as *AuthStore) GetUserByActivationToken(ctx context.Context, tokenString s
 	}
 	return &user, nil
 }
-
 
 // CreatePasswordResetToken stores a password reset token and its expiry time for a user.
 //
@@ -189,7 +216,6 @@ func (as *AuthStore) CreateActivationToken(ctx context.Context, userID uuid.UUID
 	}
 	return nil
 }
-
 
 // ValidatePasswordResetToken retrieves and validates a password reset token.
 // It checks if the token exists, is not expired, and returns the associated user ID.
@@ -234,6 +260,15 @@ func (as *AuthStore) ValidatePasswordResetToken(ctx context.Context, tokenString
 }
 
 // ValidateActivationToken retrieves and validates an activation token.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - tokenString (string): The activation token string.
+//   - currentTime (time.Time): The current time to check for expiry.
+//
+// Returns:
+//   - uuid.UUID: The user ID associated with the token if valid.
+//   - error: ErrInvalidOrExpiredActivationToken if the token is invalid or expired, or other errors.
 func (as *AuthStore) ValidateActivationToken(ctx context.Context, tokenString string, currentTime time.Time) (uuid.UUID, error) {
 	var userID uuid.UUID
 	var expiryTime time.Time
@@ -264,7 +299,6 @@ func (as *AuthStore) ValidateActivationToken(ctx context.Context, tokenString st
 
 	return userID, nil
 }
-
 
 // InvalidatePasswordResetToken invalidates a password reset token by setting it to NULL in the database.
 //
@@ -298,7 +332,6 @@ func (as *AuthStore) InvalidateActivationToken(ctx context.Context, tokenString 
 	}
 	return nil
 }
-
 
 // UpdateUserPassword updates a user's password in the database.
 //
