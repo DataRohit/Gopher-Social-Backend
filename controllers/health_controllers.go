@@ -46,3 +46,30 @@ func (hc *HealthController) HealthRedis(c *gin.Context) {
 		})
 	}
 }
+
+// HealthPostgres godoc
+// @Summary      Postgres Health Check
+// @Description  Check if Postgres connection is healthy
+// @Tags         health
+// @Produce      json
+// @Success      200 {object} models.PostgresHealthyResponse "Successfully connected to Postgres"
+// @Failure      503 {object} models.PostgresUnhealthyResponse "Failed to connect to Postgres"
+// @Router       /health/postgres [get]
+func (hc *HealthController) HealthPostgres(c *gin.Context) {
+	if database.PostgresDB != nil {
+		db, err := database.PostgresDB.DB()
+		if err != nil || db.Ping() != nil {
+			c.JSON(http.StatusServiceUnavailable, models.PostgresUnhealthyResponse{
+				Status: "Postgres Unhealthy!",
+			})
+			return
+		}
+		c.JSON(http.StatusOK, models.PostgresHealthyResponse{
+			Status: "Postgres Healthy!",
+		})
+	} else {
+		c.JSON(http.StatusServiceUnavailable, models.PostgresUnhealthyResponse{
+			Status: "Postgres Unhealthy!",
+		})
+	}
+}

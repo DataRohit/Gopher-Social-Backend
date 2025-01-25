@@ -12,5 +12,11 @@ if ! curl -f http://localhost:8080/api/v1/health/redis > /dev/null 2>&1; then
     exit 1
 fi
 
+# Perform the third GET request
+if ! curl -f http://localhost:8080/api/v1/health/postgres > /dev/null 2>&1; then
+    echo "Health check failed for /health/postgres"
+    exit 1
+fi
+
 echo "Health Check Passed!"
 exit 0

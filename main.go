@@ -49,6 +49,9 @@ func main() {
 	database.InitRedis(logger)
 	defer database.CloseRedis(logger)
 
+	database.InitPostgres(logger)
+	defer database.ClosePostgres(logger)
+
 	router := gin.New()
 
 	router.Use(middlewares.RequestIDMiddleware())

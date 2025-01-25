@@ -1,6 +1,8 @@
 volumes:
   gopher-redis-data:
     name: gopher-redis-data
+  gopher-postgres-data:
+    name: gopher-postgres-data
 
 services:
   gopher-server:
@@ -26,6 +28,8 @@ services:
     depends_on:
       gopher-redis:
         condition: service_healthy
+      gopher-postgres:
+        condition: service_healthy
 
   gopher-redis:
     image: redis:latest
@@ -36,6 +40,24 @@ services:
       - gopher-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
+      interval: 1m30s
+      retries: 5
+      timeout: 30s
+      start_period: 30s
+
+  gopher-postgres:
+    image: postgres:16-alpine
+    container_name: gopher-postgres
+    volumes:
+      - gopher-postgres-data:/var/lib/postgresql/data
+    env_file:
+      - ./.envs/.postgres.env
+    ports:
+      - "5432:5432"
+    networks:
+      - gopher-network
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 1m30s
       retries: 5
       timeout: 30s

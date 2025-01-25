@@ -22,6 +22,32 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/health/postgres": {
+            "get": {
+                "description": "Check if Postgres connection is healthy",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Postgres Health Check",
+                "responses": {
+                    "200": {
+                        "description": "Successfully connected to Postgres",
+                        "schema": {
+                            "$ref": "#/definitions/models.PostgresHealthyResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Failed to connect to Postgres",
+                        "schema": {
+                            "$ref": "#/definitions/models.PostgresUnhealthyResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health/redis": {
             "get": {
                 "description": "Check if Redis connection is healthy",
@@ -70,6 +96,24 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.PostgresHealthyResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Postgres Healthy!"
+                }
+            }
+        },
+        "models.PostgresUnhealthyResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Postgres Unhealthy!"
+                }
+            }
+        },
         "models.RedisHealthyResponse": {
             "type": "object",
             "properties": {

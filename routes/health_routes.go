@@ -12,10 +12,16 @@ import (
 //
 // Returns:
 //   - None
+//
+// Routes:
+//   - /health/router (GET): Health check for router.
+//   - /health/redis (GET): Health check for redis.
+//   - /health/postgres (GET): Health check for postgres.
 func HealthRoutes(router *gin.RouterGroup) {
 	healthController := controllers.NewHealthController()
 
 	routerHealth := router.Group("/health")
 	routerHealth.GET("/router", healthController.HealthRouter)
 	routerHealth.GET("/redis", healthController.HealthRedis)
+	routerHealth.GET("/postgres", healthController.HealthPostgres)
 }

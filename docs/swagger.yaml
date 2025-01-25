@@ -1,5 +1,17 @@
 basePath: /api/v1
 definitions:
+  models.PostgresHealthyResponse:
+    properties:
+      status:
+        example: Postgres Healthy!
+        type: string
+    type: object
+  models.PostgresUnhealthyResponse:
+    properties:
+      status:
+        example: Postgres Unhealthy!
+        type: string
+    type: object
   models.RedisHealthyResponse:
     properties:
       status:
@@ -33,6 +45,23 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /health/postgres:
+    get:
+      description: Check if Postgres connection is healthy
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully connected to Postgres
+          schema:
+            $ref: '#/definitions/models.PostgresHealthyResponse'
+        "503":
+          description: Failed to connect to Postgres
+          schema:
+            $ref: '#/definitions/models.PostgresUnhealthyResponse'
+      summary: Postgres Health Check
+      tags:
+      - health
   /health/redis:
     get:
       description: Check if Redis connection is healthy
