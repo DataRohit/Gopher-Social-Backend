@@ -1,5 +1,4 @@
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 DROP FUNCTION IF EXISTS update_updated_at_column();
 DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS roles; -- Drop roles table as well if rolling back to initial state
 DROP EXTENSION IF EXISTS "uuid-ossp";
