@@ -49,6 +49,7 @@ func main() {
 	router.Use(middlewares.RequestIDMiddleware())
 	router.Use(middlewares.RealIPMiddleware())
 	router.Use(middlewares.LoggerMiddleware(logger))
+	router.Use(middlewares.RecovererMiddleware(logger))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
