@@ -33,3 +33,17 @@ type UserRegisterErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+type UserLoginPayload struct {
+	Identifier string `json:"identifier" binding:"required" example:"john_doe / john.doe@example.com"`
+	Password   string `json:"password" binding:"required,min=8,max=64" example:"P@$$wOrd"`
+}
+
+type UserLoginSuccessResponse struct {
+	Message string `json:"message" example:"User logged in successfully"`
+}
+
+type UserLoginErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
