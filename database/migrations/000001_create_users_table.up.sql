@@ -8,7 +8,9 @@ CREATE TABLE users (
     timeout_until TIMESTAMPTZ,
     banned BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    password_reset_token TEXT,
+    reset_token_expiry TIMESTAMPTZ
 );
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()

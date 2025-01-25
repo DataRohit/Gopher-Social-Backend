@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
+
+// DOMAIN is the domain of the application.
+var DOMAIN = helpers.GetEnv("DOMAIN", "http://localhost:8080")
 
 type AuthController struct {
 	authStore *stores.AuthStore
@@ -353,5 +357,159 @@ func (ac *AuthController) Logout(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.UserLogoutSuccessResponse{
 		Message: "Logout Successful",
+	})
+}
+
+// ForgotPassword godoc
+// @Summary      Initiate forgot password flow
+// @Description  Initiates the forgot password flow by generating a reset link and sending it to the user's email if the user exists.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body models.ForgotPasswordPayload true "Request Body for Forgot Password"
+// @Success      200 {object} models.ForgotPasswordSuccessResponse "Successfully initiated forgot password flow"
+// @Failure      400 {object} models.ForgotPasswordErrorResponse "Bad Request - Invalid input"
+// @Failure      500 {object} models.ForgotPasswordErrorResponse "Internal Server Error - Failed to initiate forgot password flow"
+// @Router       /auth/forgot-password [post]
+func (ac *AuthController) ForgotPassword(c *gin.Context) {
+	var req models.ForgotPasswordPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Request Body for Forgot Password")
+		c.JSON(http.StatusBadRequest, models.ForgotPasswordErrorResponse{
+			Message: "Invalid Request Body",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	user, err := ac.authStore.GetUserByUsernameOrEmail(c, req.Identifier)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			ac.logger.WithFields(logrus.Fields{"identifier": req.Identifier}).Info("Forgot Password Request for Non-Existent User")
+			c.JSON(http.StatusOK, models.ForgotPasswordSuccessResponse{
+				Message: "Password Reset Link Sent Successfully If User Exists",
+			})
+			return
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "identifier": req.Identifier}).Error("Failed to Get User from Store for Forgot Password")
+			c.JSON(http.StatusInternalServerError, models.ForgotPasswordErrorResponse{
+				Message: "Failed to Initiate Password Reset",
+				Error:   "failed to fetch user",
+			})
+			return
+		}
+	}
+
+	resetToken, err := helpers.GeneratePasswordResetToken(user.ID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Generate Password Reset Token")
+		c.JSON(http.StatusInternalServerError, models.ForgotPasswordErrorResponse{
+			Message: "Failed to Initiate Password Reset",
+			Error:   "failed to generate reset token",
+		})
+		return
+	}
+
+	expiryTime := helpers.ConvertToAsiaMumbaiTime(time.Now().Add(time.Minute * 15))
+	err = ac.authStore.CreatePasswordResetToken(c, user.ID, resetToken, expiryTime)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Save Password Reset Token to Store")
+		c.JSON(http.StatusInternalServerError, models.ForgotPasswordErrorResponse{
+			Message: "Failed to Initiate Password Reset",
+			Error:   "failed to save reset token",
+		})
+		return
+	}
+
+	c.SetCookie("access_token", "", -1, "/", "", true, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
+	c.JSON(http.StatusOK, models.ForgotPasswordSuccessResponse{
+		Message: "Password Reset Link Sent Successfully If User Exists",
+		Link:    fmt.Sprintf("%s/api/v1/reset-password?token=%s", DOMAIN, resetToken),
+	})
+}
+
+// ResetPassword godoc
+// @Summary      Reset user password
+// @Description  Resets the user's password using the provided reset token in query parameter.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        token query string true "Reset Token"
+// @Param        body body models.ResetPasswordPayload true "Request Body for Reset Password"
+// @Success      200 {object} models.ResetPasswordSuccessResponse "Successfully reset password"
+// @Failure      400 {object} models.ResetPasswordErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ResetPasswordErrorResponse "Unauthorized - Invalid or expired reset token"
+// @Failure      500 {object} models.ResetPasswordErrorResponse "Internal Server Error - Failed to reset password"
+// @Router       /auth/reset-password [post]
+func (ac *AuthController) ResetPassword(c *gin.Context) {
+	var req models.ResetPasswordPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Request Body for Reset Password")
+		c.JSON(http.StatusBadRequest, models.ResetPasswordErrorResponse{
+			Message: "Invalid Request Body",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	token := c.Query("token")
+	if token == "" {
+		ac.logger.WithFields(logrus.Fields{"error": "token missing in query params"}).Error("Invalid Request: Token Missing")
+		c.JSON(http.StatusBadRequest, models.ResetPasswordErrorResponse{
+			Message: "Invalid Request",
+			Error:   "token is required in query parameters",
+		})
+		return
+	}
+	// No need to bind token from body anymore
+	// req.Token = token
+
+	userID, err := ac.authStore.ValidatePasswordResetToken(c, token, helpers.ConvertToAsiaMumbaiTime(time.Now()))
+	if err != nil {
+		if errors.Is(err, stores.ErrInvalidOrExpiredToken) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Error("Invalid or Expired Reset Token")
+			c.JSON(http.StatusUnauthorized, models.ResetPasswordErrorResponse{
+				Message: "Invalid or Expired Reset Token",
+				Error:   "invalid or expired token",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Error("Failed to Validate Password Reset Token")
+			c.JSON(http.StatusInternalServerError, models.ResetPasswordErrorResponse{
+				Message: "Failed to Reset Password",
+				Error:   "failed to validate reset token",
+			})
+		}
+		return
+	}
+
+	hashedPassword, err := helpers.HashPassword(req.NewPassword)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to Hash New Password")
+		c.JSON(http.StatusInternalServerError, models.ResetPasswordErrorResponse{
+			Message: "Failed to Reset Password",
+			Error:   "failed to hash new password",
+		})
+		return
+	}
+
+	err = ac.authStore.UpdateUserPassword(c, userID, hashedPassword)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": userID}).Error("Failed to Update User Password in Store")
+		c.JSON(http.StatusInternalServerError, models.ResetPasswordErrorResponse{
+			Message: "Failed to Reset Password",
+			Error:   "failed to update password",
+		})
+		return
+	}
+
+	err = ac.authStore.InvalidatePasswordResetToken(c, token)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Warn("Failed to Invalidate Password Reset Token, But Password Reset was Successful")
+	}
+
+	c.JSON(http.StatusOK, models.ResetPasswordSuccessResponse{
+		Message: "Password Reset Successfully.",
 	})
 }

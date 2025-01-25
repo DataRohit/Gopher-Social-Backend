@@ -1,5 +1,29 @@
 basePath: /api/v1
 definitions:
+  models.ForgotPasswordErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ForgotPasswordPayload:
+    properties:
+      identifier:
+        example: john_doe / john.doe@example.com
+        type: string
+    required:
+    - identifier
+    type: object
+  models.ForgotPasswordSuccessResponse:
+    properties:
+      link:
+        example: http://localhost:8080/api/v1/reset-password?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg
+        type: string
+      message:
+        example: Password Reset Link Sent Successfully If User Exists.
+        type: string
+    type: object
   models.PostgresHealthyResponse:
     properties:
       status:
@@ -22,6 +46,33 @@ definitions:
     properties:
       status:
         example: Redis Unhealthy!
+        type: string
+    type: object
+  models.ResetPasswordErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ResetPasswordPayload:
+    properties:
+      confirm_password:
+        example: NewP@$$wOrd
+        type: string
+      new_password:
+        example: NewP@$$wOrd
+        maxLength: 64
+        minLength: 8
+        type: string
+    required:
+    - confirm_password
+    - new_password
+    type: object
+  models.ResetPasswordSuccessResponse:
+    properties:
+      message:
+        example: Password Reset Successfully.
         type: string
     type: object
   models.RouterHealthyResponse:
@@ -151,6 +202,38 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Initiates the forgot password flow by generating a reset link and
+        sending it to the user's email if the user exists.
+      parameters:
+      - description: Request Body for Forgot Password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ForgotPasswordPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully initiated forgot password flow
+          schema:
+            $ref: '#/definitions/models.ForgotPasswordSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ForgotPasswordErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to initiate forgot password
+            flow
+          schema:
+            $ref: '#/definitions/models.ForgotPasswordErrorResponse'
+      summary: Initiate forgot password flow
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -235,6 +318,46 @@ paths:
           schema:
             $ref: '#/definitions/models.UserRegisterErrorResponse'
       summary: Register a new user
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Resets the user's password using the provided reset token in query
+        parameter.
+      parameters:
+      - description: Reset Token
+        in: query
+        name: token
+        required: true
+        type: string
+      - description: Request Body for Reset Password
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetPasswordPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully reset password
+          schema:
+            $ref: '#/definitions/models.ResetPasswordSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ResetPasswordErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or expired reset token
+          schema:
+            $ref: '#/definitions/models.ResetPasswordErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to reset password
+          schema:
+            $ref: '#/definitions/models.ResetPasswordErrorResponse'
+      summary: Reset user password
       tags:
       - auth
   /health/postgres:

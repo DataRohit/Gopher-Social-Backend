@@ -22,6 +22,52 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/forgot-password": {
+            "post": {
+                "description": "Initiates the forgot password flow by generating a reset link and sending it to the user's email if the user exists.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Initiate forgot password flow",
+                "parameters": [
+                    {
+                        "description": "Request Body for Forgot Password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ForgotPasswordPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully initiated forgot password flow",
+                        "schema": {
+                            "$ref": "#/definitions/models.ForgotPasswordSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ForgotPasswordErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to initiate forgot password flow",
+                        "schema": {
+                            "$ref": "#/definitions/models.ForgotPasswordErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Logs in an existing user and returns access and refresh tokens as secure cookies.",
@@ -152,6 +198,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/reset-password": {
+            "post": {
+                "description": "Resets the user's password using the provided reset token in query parameter.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset user password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Reset Token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "description": "Request Body for Reset Password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetPasswordPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully reset password",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetPasswordSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetPasswordErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or expired reset token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetPasswordErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to reset password",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResetPasswordErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health/postgres": {
             "get": {
                 "description": "Check if Postgres connection is healthy",
@@ -226,6 +331,42 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.ForgotPasswordErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ForgotPasswordPayload": {
+            "type": "object",
+            "required": [
+                "identifier"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "john_doe / john.doe@example.com"
+                }
+            }
+        },
+        "models.ForgotPasswordSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "example": "http://localhost:8080/api/v1/reset-password?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Password Reset Link Sent Successfully If User Exists."
+                }
+            }
+        },
         "models.PostgresHealthyResponse": {
             "type": "object",
             "properties": {
@@ -259,6 +400,45 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Redis Unhealthy!"
+                }
+            }
+        },
+        "models.ResetPasswordErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResetPasswordPayload": {
+            "type": "object",
+            "required": [
+                "confirm_password",
+                "new_password"
+            ],
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "example": "NewP@$$wOrd"
+                },
+                "new_password": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8,
+                    "example": "NewP@$$wOrd"
+                }
+            }
+        },
+        "models.ResetPasswordSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Password Reset Successfully."
                 }
             }
         },
