@@ -13,6 +13,27 @@ definitions:
         example: User Activated Successfully.
         type: string
     type: object
+  models.FollowUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.FollowUserPayload:
+    properties:
+      identifier:
+        example: john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - identifier
+    type: object
+  models.FollowUserSuccessResponse:
+    properties:
+      message:
+        example: User Followed Successfully
+        type: string
+    type: object
   models.ForgotPasswordErrorResponse:
     properties:
       error:
@@ -181,6 +202,27 @@ definitions:
     properties:
       status:
         example: Router Healthy!
+        type: string
+    type: object
+  models.UnfollowUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UnfollowUserPayload:
+    properties:
+      identifier:
+        example: john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - identifier
+    type: object
+  models.UnfollowUserSuccessResponse:
+    properties:
+      message:
+        example: User Unfollowed Successfully
         type: string
     type: object
   models.UpdateProfileErrorResponse:
@@ -702,6 +744,98 @@ paths:
       summary: Update user profile
       tags:
       - profile
+  /user/follow:
+    post:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to follow another user.
+      parameters:
+      - description: Request Body for Follow User
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.FollowUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully followed user
+          schema:
+            $ref: '#/definitions/models.FollowUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+        "404":
+          description: Not Found - Followee user not found
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+        "409":
+          description: Conflict - Already following user
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to follow user
+          schema:
+            $ref: '#/definitions/models.FollowUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Follow a user
+      tags:
+      - follow
+  /user/unfollow:
+    delete:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to unfollow another user.
+      parameters:
+      - description: Request Body for Unfollow User
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UnfollowUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully unfollowed user
+          schema:
+            $ref: '#/definitions/models.UnfollowUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UnfollowUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UnfollowUserErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UnfollowUserErrorResponse'
+        "404":
+          description: Not Found - Followee user not found or not following
+          schema:
+            $ref: '#/definitions/models.UnfollowUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to unfollow user
+          schema:
+            $ref: '#/definitions/models.UnfollowUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unfollow a user
+      tags:
+      - follow
 securityDefinitions:
   BasicAuth:
     type: basic

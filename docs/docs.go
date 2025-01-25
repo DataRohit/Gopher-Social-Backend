@@ -554,6 +554,150 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/follow": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to follow another user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Follow a user",
+                "parameters": [
+                    {
+                        "description": "Request Body for Follow User",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully followed user",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Followee user not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Already following user",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to follow user",
+                        "schema": {
+                            "$ref": "#/definitions/models.FollowUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/unfollow": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to unfollow another user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Unfollow a user",
+                "parameters": [
+                    {
+                        "description": "Request Body for Unfollow User",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully unfollowed user",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Followee user not found or not following",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to unfollow user",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -574,6 +718,38 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "User Activated Successfully."
+                }
+            }
+        },
+        "models.FollowUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.FollowUserPayload": {
+            "type": "object",
+            "required": [
+                "identifier"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "models.FollowUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Followed Successfully"
                 }
             }
         },
@@ -821,6 +997,38 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Router Healthy!"
+                }
+            }
+        },
+        "models.UnfollowUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UnfollowUserPayload": {
+            "type": "object",
+            "required": [
+                "identifier"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "models.UnfollowUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Unfollowed Successfully"
                 }
             }
         },

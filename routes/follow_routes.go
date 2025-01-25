@@ -1,0 +1,35 @@
+package routes
+
+import (
+	"github.com/datarohit/gopher-social-backend/controllers"
+	"github.com/datarohit/gopher-social-backend/middlewares"
+	"github.com/datarohit/gopher-social-backend/stores"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/sirupsen/logrus"
+)
+
+// FollowRoutes defines routes for follow related operations.
+//
+// Parameters:
+//   - router (*gin.RouterGroup): RouterGroup for follow routes under /user path.
+//   - dbPool (*pgxpool.Pool): Pgx connection pool to interact with the database.
+//   - logger (*logrus.Logger): Logrus logger pointer to log messages.
+//
+// Returns:
+//   - None
+//
+// Routes:
+//   - POST /user/follow: Route to follow a user. Requires authentication.
+//   - DELETE /user/unfollow: Route to unfollow a user. Requires authentication.
+func FollowRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
+	authStore := stores.NewAuthStore(dbPool)
+	profileStore := stores.NewProfileStore(dbPool)
+	followStore := stores.NewFollowStore(dbPool)
+	followController := controllers.NewFollowController(authStore, profileStore, followStore, logger)
+
+	followRouter := router.Group("/user")
+	followRouter.Use(middlewares.AuthMiddleware(logger))
+	followRouter.POST("/follow", followController.FollowUser)
+	followRouter.DELETE("/unfollow", followController.UnfollowUser)
+}
