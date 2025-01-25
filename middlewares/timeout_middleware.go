@@ -33,7 +33,7 @@ func TimeoutMiddleware(timeout time.Duration) gin.HandlerFunc {
 		case <-finished:
 		case <-ctx.Done():
 			c.AbortWithStatusJSON(408, gin.H{
-				"error": "Request Timeout",
+				"error": "Request Timeout!",
 			})
 			return
 		}

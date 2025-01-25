@@ -24,10 +24,10 @@ func RecovererMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 				logger.WithFields(logrus.Fields{
 					"request-id": requestID,
 					"error":      err,
-				}).Error("Panic Recovered")
+				}).Error("Panic Recovered!")
 
 				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-					"error": "Internal Server Error",
+					"error": "Internal Server Error!",
 				})
 			}
 		}()

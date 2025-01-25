@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/datarohit/gopher-social-backend/database"
 	_ "github.com/datarohit/gopher-social-backend/docs"
 	"github.com/datarohit/gopher-social-backend/helpers"
 	"github.com/datarohit/gopher-social-backend/middlewares"
@@ -44,6 +45,9 @@ func main() {
 
 	logger := helpers.NewLogger()
 
+	database.InitRedis(logger)
+	defer database.CloseRedis(logger)
+
 	router := gin.New()
 
 	router.Use(middlewares.RequestIDMiddleware())
@@ -52,6 +56,7 @@ func main() {
 	router.Use(middlewares.RecovererMiddleware(logger))
 	router.Use(middlewares.CORSMiddleware())
 	router.Use(middlewares.TimeoutMiddleware(10 * time.Second))
+	router.Use(middlewares.RateLimiterMiddleware(database.RedisClient, 15, time.Minute, logger))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
