@@ -2,7 +2,7 @@
 FROM golang:1.23.4-bullseye AS build-stage
 
 # Install make
-RUN apt-get update && apt-get install -y make
+RUN apt-get update && apt-get install -y make curl
 
 # Set the Current Working Directory inside the container
 WORKDIR /app

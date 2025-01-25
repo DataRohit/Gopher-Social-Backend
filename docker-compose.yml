@@ -1,3 +1,7 @@
+volumes:
+  gopher-redis-data:
+    name: gopher-redis-data
+
 services:
   gopher-server:
     build:
@@ -13,6 +17,29 @@ services:
       - .:/app:z
     networks:
       - gopher-network
+    # healthcheck:
+    #   test: [ "CMD", "curl", "-f", "http://localhost:8080/api/v1/health/router" ]
+    #   interval: 5s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 15s
+    depends_on:
+      gopher-redis:
+        condition: service_healthy
+
+  gopher-redis:
+    image: redis:latest
+    container_name: gopher-redis
+    volumes:
+      - gopher-redis-data:/data
+    networks:
+      - gopher-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
 networks:
   gopher-network:
