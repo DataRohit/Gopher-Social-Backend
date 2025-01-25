@@ -115,23 +115,33 @@ func (ps *ProfileStore) CreateProfile(ctx context.Context, profile *models.Profi
 	return &createdProfile, nil
 }
 
-// GetProfileByUserID retrieves a user profile by user ID from the database.
+// GetProfileByUserID retrieves a user profile by user ID from the database and joins with user data.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - userID (uuid.UUID): The ID of the user whose profile is to be retrieved.
 //
 // Returns:
-//   - *models.Profile: The retrieved profile if found.
+//   - *models.Profile: The retrieved profile with associated user data if found.
 //   - error: ErrProfileNotFound if profile not found or other errors during database query.
 func (ps *ProfileStore) GetProfileByUserID(ctx context.Context, userID uuid.UUID) (*models.Profile, error) {
 	var profile models.Profile
+	profile.User = &models.User{}
+	profile.User.Role = &models.Role{}
+
 	err := ps.dbPool.QueryRow(ctx, `
-		SELECT id, user_id, first_name, last_name, website, github, linkedin, twitter, google_scholar, created_at, updated_at
-		FROM profiles
-		WHERE user_id = $1
+		SELECT
+			p.id, p.user_id, p.first_name, p.last_name, p.website, p.github, p.linkedin, p.twitter, p.google_scholar, p.created_at, p.updated_at,
+			u.id, u.username, u.email, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description
+		FROM profiles p
+		INNER JOIN users u ON p.user_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE p.user_id = $1
 	`, userID).Scan(
 		&profile.ID, &profile.UserID, &profile.FirstName, &profile.LastName, &profile.Website, &profile.Github, &profile.LinkedIn, &profile.Twitter, &profile.GoogleScholar, &profile.CreatedAt, &profile.UpdatedAt,
+		&profile.User.ID, &profile.User.Username, &profile.User.Email, &profile.User.TimeoutUntil, &profile.User.Banned, &profile.User.IsActive, &profile.User.CreatedAt, &profile.User.UpdatedAt,
+		&profile.User.Role.Level, &profile.User.Role.Description,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -141,4 +151,25 @@ func (ps *ProfileStore) GetProfileByUserID(ctx context.Context, userID uuid.UUID
 	}
 
 	return &profile, nil
+}
+
+// GetProfileForLoggedInUser retrieves a user profile for the logged-in user by user ID from the database.
+// It's similar to GetProfileByUserID but specifically named to reflect its use case.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): The ID of the logged-in user whose profile is to be retrieved.
+//
+// Returns:
+//   - *models.Profile: The retrieved profile if found.
+//   - error: ErrProfileNotFound if profile not found or other errors during database query.
+func (ps *ProfileStore) GetProfileForLoggedInUser(ctx context.Context, userID uuid.UUID) (*models.Profile, error) {
+	profile, err := ps.GetProfileByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, ErrProfileNotFound) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, fmt.Errorf("failed to get profile for logged-in user: %w", err)
+	}
+	return profile, nil
 }

@@ -434,6 +434,58 @@
                 }
             }
         },
+        "/profile/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the profile of the currently logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Get logged-in user profile",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetLoggedInUserProfileSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetLoggedInUserProfileErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetLoggedInUserProfileErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Profile not found for the logged-in user",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetLoggedInUserProfileErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to get profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetLoggedInUserProfileErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile/update": {
             "put": {
                 "security": [
@@ -552,6 +604,29 @@
                 "message": {
                     "type": "string",
                     "example": "Password Reset Link Sent Successfully If User Exists."
+                }
+            }
+        },
+        "models.GetLoggedInUserProfileErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetLoggedInUserProfileSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Profile Retrieved Successfully"
+                },
+                "profile": {
+                    "$ref": "#/definitions/models.Profile"
                 }
             }
         },

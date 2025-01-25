@@ -45,16 +45,6 @@ func NewProfileController(profileStore *stores.ProfileStore, logger *logrus.Logg
 // @Failure      500 {object} models.UpdateProfileErrorResponse "Internal Server Error - Failed to update profile"
 // @Router       /profile/update [put]
 func (pc *ProfileController) UpdateProfile(c *gin.Context) {
-	// userID, exists := c.Get("userID")
-	// if !exists {
-	// 	pc.logger.Error("UserID not Found in Context. Middleware Misconfiguration.")
-	// 	c.JSON(http.StatusUnauthorized, models.UpdateProfileErrorResponse{
-	// 		Message: "Unauthorized",
-	// 		Error:   "user not authenticated",
-	// 	})
-	// 	return
-	// }
-
 	user, exists := c.Get("user")
 	if !exists {
 		pc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
@@ -108,5 +98,54 @@ func (pc *ProfileController) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, models.UpdateProfileSuccessResponse{
 		Message: "Profile Updated Successfully",
 		Profile: updatedProfile,
+	})
+}
+
+// GetLoggedInUserProfile godoc
+// @Summary      Get logged-in user profile
+// @Description  Retrieves the profile of the currently logged-in user.
+// @Tags         profile
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} models.GetLoggedInUserProfileSuccessResponse "Successfully retrieved profile"
+// @Failure      401 {object} models.GetLoggedInUserProfileErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.GetLoggedInUserProfileErrorResponse "Forbidden - User account is inactive or banned"
+// @Failure      404 {object} models.GetLoggedInUserProfileErrorResponse "Not Found - Profile not found for the logged-in user"
+// @Failure      500 {object} models.GetLoggedInUserProfileErrorResponse "Internal Server Error - Failed to get profile"
+// @Router       /profile/me [get]
+func (pc *ProfileController) GetLoggedInUserProfile(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not Found in Context. Middleware Misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.GetLoggedInUserProfileErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := user.(*models.User)
+
+	profile, err := pc.profileStore.GetProfileByUserID(c, userModel.ID)
+	if err != nil {
+		if errors.Is(err, stores.ErrProfileNotFound) {
+			pc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Profile Not Found")
+			c.JSON(http.StatusNotFound, models.GetLoggedInUserProfileErrorResponse{
+				Message: "Profile Not Found",
+				Error:   err.Error(),
+			})
+		} else {
+			pc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to Get Profile from Store")
+			c.JSON(http.StatusInternalServerError, models.GetLoggedInUserProfileErrorResponse{
+				Message: "Failed to Get Profile",
+				Error:   "failed to get profile from database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GetLoggedInUserProfileSuccessResponse{
+		Message: "Profile Retrieved Successfully",
+		Profile: profile,
 	})
 }

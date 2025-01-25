@@ -37,6 +37,21 @@ definitions:
         example: Password Reset Link Sent Successfully If User Exists.
         type: string
     type: object
+  models.GetLoggedInUserProfileErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.GetLoggedInUserProfileSuccessResponse:
+    properties:
+      message:
+        example: Profile Retrieved Successfully
+        type: string
+      profile:
+        $ref: '#/definitions/models.Profile'
+    type: object
   models.PostgresHealthyResponse:
     properties:
       status:
@@ -618,6 +633,39 @@ paths:
       summary: Router Health Check
       tags:
       - health
+  /profile/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the profile of the currently logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved profile
+          schema:
+            $ref: '#/definitions/models.GetLoggedInUserProfileSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.GetLoggedInUserProfileErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.GetLoggedInUserProfileErrorResponse'
+        "404":
+          description: Not Found - Profile not found for the logged-in user
+          schema:
+            $ref: '#/definitions/models.GetLoggedInUserProfileErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to get profile
+          schema:
+            $ref: '#/definitions/models.GetLoggedInUserProfileErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get logged-in user profile
+      tags:
+      - profile
   /profile/update:
     put:
       consumes:
