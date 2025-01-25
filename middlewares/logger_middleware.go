@@ -42,13 +42,13 @@ func LoggerMiddleware(logger *logrus.Logger) gin.HandlerFunc {
 
 		switch {
 		case statusCode >= 500:
-			logger.WithFields(logFields).Error("Server Error")
+			logger.WithFields(logFields).Error("HTTP/HTTPS Request - Server Error")
 		case statusCode >= 400:
-			logger.WithFields(logFields).Warn("Client Error")
+			logger.WithFields(logFields).Warn("HTTP/HTTPS Request - Client Error")
 		case statusCode >= 300:
-			logger.WithFields(logFields).Warn("Redirection")
+			logger.WithFields(logFields).Warn("HTTP/HTTPS Request - Redirection")
 		default:
-			logger.WithFields(logFields).Info("Success")
+			logger.WithFields(logFields).Info(" HTTP/HTTPS Request - Success")
 		}
 	}
 }

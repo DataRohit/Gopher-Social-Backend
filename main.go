@@ -51,6 +51,7 @@ func main() {
 	router.Use(middlewares.LoggerMiddleware(logger))
 	router.Use(middlewares.RecovererMiddleware(logger))
 	router.Use(middlewares.CORSMiddleware())
+	router.Use(middlewares.TimeoutMiddleware(10 * time.Second))
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
