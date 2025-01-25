@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/datarohit/gopher-social-backend/docs"
 	"github.com/datarohit/gopher-social-backend/helpers"
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
@@ -44,6 +45,9 @@ func main() {
 	logger := helpers.NewLogger()
 
 	router := gin.New()
+
+	router.Use(middlewares.RequestIDMiddleware())
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &http.Server{
