@@ -86,7 +86,19 @@ definitions:
   models.UserLoginSuccessResponse:
     properties:
       message:
-        example: User logged in successfully
+        example: User Logged In Successfully
+        type: string
+    type: object
+  models.UserLogoutErrorResponse:
+    properties:
+      message:
+        example: User Not Logged In
+        type: string
+    type: object
+  models.UserLogoutSuccessResponse:
+    properties:
+      message:
+        example: Logout Successful
         type: string
     type: object
   models.UserRegisterErrorResponse:
@@ -119,7 +131,7 @@ definitions:
   models.UserRegisterSuccessResponse:
     properties:
       message:
-        example: User registered successfully
+        example: User Registered Successfully
         type: string
       user:
         $ref: '#/definitions/models.User'
@@ -172,6 +184,23 @@ paths:
           schema:
             $ref: '#/definitions/models.UserLoginErrorResponse'
       summary: Login user
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Logs out the current user by clearing access and refresh tokens.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            $ref: '#/definitions/models.UserLogoutSuccessResponse'
+        "400":
+          description: Bad Request - User not logged in
+          schema:
+            $ref: '#/definitions/models.UserLogoutErrorResponse'
+      summary: Logout user
       tags:
       - auth
   /auth/register:

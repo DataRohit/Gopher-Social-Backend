@@ -74,6 +74,32 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/logout": {
+            "post": {
+                "description": "Logs out the current user by clearing access and refresh tokens.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully logged out",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserLogoutSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - User not logged in",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserLogoutErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Registers a new user to the platform",
@@ -325,7 +351,25 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "User logged in successfully"
+                    "example": "User Logged In Successfully"
+                }
+            }
+        },
+        "models.UserLogoutErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Not Logged In"
+                }
+            }
+        },
+        "models.UserLogoutSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Logout Successful"
                 }
             }
         },
@@ -371,7 +415,7 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "User registered successfully"
+                    "example": "User Registered Successfully"
                 },
                 "user": {
                     "$ref": "#/definitions/models.User"

@@ -50,7 +50,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ac.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Request Body for User Registration")
 		c.JSON(http.StatusBadRequest, models.UserRegisterErrorResponse{
-			Message: "Invalid request body",
+			Message: "Invalid Request Body",
 			Error:   err.Error(),
 		})
 		return
@@ -77,7 +77,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 		if errors.Is(err, stores.ErrUserAlreadyExists) {
 			ac.logger.WithFields(logrus.Fields{"error": err, "username": req.Username, "email": req.Email}).Error("User Already Exists")
 			c.JSON(http.StatusConflict, models.UserRegisterErrorResponse{
-				Message: "User already Exists",
+				Message: "User Already Exists",
 				Error:   err.Error(),
 			})
 		} else {
@@ -117,7 +117,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		if err == nil && accessToken.Valid {
 			userID, err := helpers.ExtractUserIDFromToken(accessToken)
 			if err != nil {
-				ac.logger.WithFields(logrus.Fields{"error": err, "token": accessTokenCookie}).Error("Failed to extract user ID from access token")
+				ac.logger.WithFields(logrus.Fields{"error": err, "token": accessTokenCookie}).Error("Failed to Extract User ID from Access Token")
 				c.JSON(http.StatusInternalServerError, models.UserLoginErrorResponse{
 					Message: "Login Failed",
 					Error:   "internal server error",
@@ -130,7 +130,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 				if errors.Is(err, stores.ErrUserNotFound) {
 					goto RefreshOrNormalLogin
 				} else {
-					ac.logger.WithFields(logrus.Fields{"error": err, "userID": userID}).Error("Failed to get user by ID")
+					ac.logger.WithFields(logrus.Fields{"error": err, "userID": userID}).Error("Failed to Get User by ID")
 					c.JSON(http.StatusInternalServerError, models.UserLoginErrorResponse{
 						Message: "Login Failed",
 						Error:   "internal server error",
@@ -140,7 +140,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 			}
 
 			c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
-				Message: "User already logged in",
+				Message: "User Already Logged In",
 			})
 			return
 		} else {
@@ -323,5 +323,35 @@ NormalLogin:
 	log.Printf("User Logged in Successfully: %v", user.ID)
 	c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
 		Message: "Login Successful",
+	})
+}
+
+// Logout godoc
+// @Summary      Logout user
+// @Description  Logs out the current user by clearing access and refresh tokens.
+// @Tags         auth
+// @Produce      json
+// @Success      200 {object} models.UserLogoutSuccessResponse "Successfully logged out"
+// @Failure      400 {object} models.UserLogoutErrorResponse "Bad Request - User not logged in"
+// @Router       /auth/logout [post]
+func (ac *AuthController) Logout(c *gin.Context) {
+	_, errAccessToken := c.Cookie("access_token")
+	_, errRefreshToken := c.Cookie("refresh_token")
+
+	if errors.Is(errAccessToken, http.ErrNoCookie) || errors.Is(errRefreshToken, http.ErrNoCookie) {
+		ac.logger.WithFields(logrus.Fields{"request-id": c.GetString("request-id")}).Warn("Logout Attempted without Cookies, User Not Logged In")
+		c.JSON(http.StatusBadRequest, models.UserLogoutErrorResponse{
+			Message: "User Not Logged In",
+		})
+		return
+	}
+
+	c.SetCookie("access_token", "", -1, "/", "", true, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
+	ac.logger.WithFields(logrus.Fields{"request-id": c.GetString("request-id")}).Info("User Logged Out Successfully")
+
+	c.JSON(http.StatusOK, models.UserLogoutSuccessResponse{
+		Message: "Logout Successful",
 	})
 }

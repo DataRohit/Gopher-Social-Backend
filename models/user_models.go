@@ -25,7 +25,7 @@ type UserRegisterPayload struct {
 	Password string `json:"password" binding:"required,min=8,max=64" example:"P@$$wOrd"`
 }
 type UserRegisterSuccessResponse struct {
-	Message string `json:"message" example:"User registered successfully"`
+	Message string `json:"message" example:"User Registered Successfully"`
 	User    *User  `json:"user"`
 }
 
@@ -40,10 +40,18 @@ type UserLoginPayload struct {
 }
 
 type UserLoginSuccessResponse struct {
-	Message string `json:"message" example:"User logged in successfully"`
+	Message string `json:"message" example:"User Logged In Successfully"`
 }
 
 type UserLoginErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
+}
+
+type UserLogoutSuccessResponse struct {
+	Message string `json:"message" example:"Logout Successful"`
+}
+
+type UserLogoutErrorResponse struct {
+	Message string `json:"message" example:"User Not Logged In"`
 }
