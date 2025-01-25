@@ -47,6 +47,7 @@ func main() {
 	router := gin.New()
 
 	router.Use(middlewares.RequestIDMiddleware())
+	router.Use(middlewares.RealIPMiddleware())
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
