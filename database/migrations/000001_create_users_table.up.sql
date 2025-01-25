@@ -7,10 +7,13 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     timeout_until TIMESTAMPTZ,
     banned BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     password_reset_token TEXT,
-    reset_token_expiry TIMESTAMPTZ
+    reset_token_expiry TIMESTAMPTZ,
+    activation_token TEXT,
+    activation_token_expiry TIMESTAMPTZ
 );
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()

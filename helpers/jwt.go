@@ -9,12 +9,14 @@ import (
 )
 
 var (
-	accessTokenSecret   = GetEnv("JWT_ACCESS_SECRET", "06dcdc54085a52a61eac2c085cea9d9ef05c239594f618d1ca72aee91f315563")
-	refreshTokenSecret  = GetEnv("JWT_REFRESH_SECRET", "3b69f710a00d78ed724b6d26953f440d0beca2752762f7b2f546a6a27557137f")
-	passwordResetSecret = GetEnv("JWT_RESET_SECRET", "e07ab84db119a5948e07e78be81ae7e2d6a29c872a1bf301225ccada3ff1c457")
-	accessTokenExpiry   = 30 * time.Minute
-	refreshTokenExpiry  = 6 * time.Hour
-	passwordResetExpiry = 15 * time.Minute
+	accessTokenSecret     = GetEnv("JWT_ACCESS_SECRET", "06dcdc54085a52a61eac2c085cea9d9ef05c239594f618d1ca72aee91f315563")
+	refreshTokenSecret    = GetEnv("JWT_REFRESH_SECRET", "3b69f710a00d78ed724b6d26953f440d0beca2752762f7b2f546a6a27557137f")
+	passwordResetSecret   = GetEnv("JWT_RESET_SECRET", "e07ab84db119a5948e07e78be81ae7e2d6a29c872a1bf301225ccada3ff1c457")
+	activationTokenSecret = GetEnv("JWT_ACTIVATION_SECRET", "89be6deda2f0acdd570fde648b271e3f697fa05e51a24ccc8624c8d3bf7c56ab")
+	accessTokenExpiry     = 30 * time.Minute
+	refreshTokenExpiry    = 6 * time.Hour
+	passwordResetExpiry   = 15 * time.Minute
+	activationTokenExpiry = 15 * time.Minute
 )
 
 // GenerateAccessToken generates a new JWT access token.
@@ -44,6 +46,11 @@ func GenerateRefreshToken(userID uuid.UUID) (string, error) {
 // GeneratePasswordResetToken generates a new JWT password reset token.
 func GeneratePasswordResetToken(userID uuid.UUID) (string, error) {
 	return generateToken(userID, passwordResetSecret, passwordResetExpiry)
+}
+
+// GenerateActivationToken generates a new JWT activation token.
+func GenerateActivationToken(userID uuid.UUID) (string, error) {
+	return generateToken(userID, activationTokenSecret, activationTokenExpiry)
 }
 
 // generateToken is a helper function to generate JWT tokens.
@@ -99,6 +106,11 @@ func VerifyRefreshToken(tokenString string) (*jwt.Token, error) {
 // VerifyPasswordResetToken verifies the JWT password reset token.
 func VerifyPasswordResetToken(tokenString string) (*jwt.Token, error) {
 	return verifyToken(tokenString, passwordResetSecret)
+}
+
+// VerifyActivationToken verifies the JWT activation token.
+func VerifyActivationToken(tokenString string) (*jwt.Token, error) {
+	return verifyToken(tokenString, activationTokenSecret)
 }
 
 // verifyToken is a helper function to verify JWT tokens.

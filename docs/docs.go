@@ -22,6 +22,53 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/activate": {
+            "get": {
+                "description": "Activates a user account using the activation token from the query parameter.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Activate user account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Activation Token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully activated user account",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActivateUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActivateUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or expired activation token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActivateUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to activate user account",
+                        "schema": {
+                            "$ref": "#/definitions/models.ActivateUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/forgot-password": {
             "post": {
                 "description": "Initiates the forgot password flow by generating a reset link and sending it to the user's email if the user exists.",
@@ -111,6 +158,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.UserLoginErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden - Account not activated",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserLoginErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error - Failed to login user",
                         "schema": {
@@ -193,6 +246,64 @@ const docTemplate = `{
                         "description": "Internal Server Error - Failed to register user",
                         "schema": {
                             "$ref": "#/definitions/models.UserRegisterErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/resend-activation-link": {
+            "post": {
+                "description": "Resends the activation link to the user's email if the user exists and is not already active.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Resend Activation Link",
+                "parameters": [
+                    {
+                        "description": "Request Body for Resending Activation Link",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully resent activation link",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - User already active",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to resend activation link",
+                        "schema": {
+                            "$ref": "#/definitions/models.ResendActivationLinkErrorResponse"
                         }
                     }
                 }
@@ -331,6 +442,26 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.ActivateUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ActivateUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Activated Successfully."
+                }
+            }
+        },
         "models.ForgotPasswordErrorResponse": {
             "type": "object",
             "properties": {
@@ -400,6 +531,49 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Redis Unhealthy!"
+                }
+            }
+        },
+        "models.ResendActivationLinkErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ResendActivationLinkPayload": {
+            "type": "object",
+            "required": [
+                "identifier",
+                "password"
+            ],
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "example": "john_doe / john.doe@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 8,
+                    "example": "P@$$wOrd"
+                }
+            }
+        },
+        "models.ResendActivationLinkSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "activation_link": {
+                    "type": "string",
+                    "example": "http://localhost:8080/api/v1/auth/activate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Activation Link Sent Successfully."
                 }
             }
         },
@@ -481,6 +655,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "timeout_until": {
                     "type": "string",
@@ -593,6 +771,10 @@ const docTemplate = `{
         "models.UserRegisterSuccessResponse": {
             "type": "object",
             "properties": {
+                "activation_link": {
+                    "type": "string",
+                    "example": "http://localhost:8080/api/v1/auth/activate?token=xxxxxxxx"
+                },
                 "message": {
                     "type": "string",
                     "example": "User Registered Successfully"

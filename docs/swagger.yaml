@@ -1,5 +1,18 @@
 basePath: /api/v1
 definitions:
+  models.ActivateUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ActivateUserSuccessResponse:
+    properties:
+      message:
+        example: User Activated Successfully.
+        type: string
+    type: object
   models.ForgotPasswordErrorResponse:
     properties:
       error:
@@ -46,6 +59,36 @@ definitions:
     properties:
       status:
         example: Redis Unhealthy!
+        type: string
+    type: object
+  models.ResendActivationLinkErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ResendActivationLinkPayload:
+    properties:
+      identifier:
+        example: john_doe / john.doe@example.com
+        type: string
+      password:
+        example: P@$$wOrd
+        maxLength: 64
+        minLength: 8
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  models.ResendActivationLinkSuccessResponse:
+    properties:
+      activation_link:
+        example: http://localhost:8080/api/v1/auth/activate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg
+        type: string
+      message:
+        example: Activation Link Sent Successfully.
         type: string
     type: object
   models.ResetPasswordErrorResponse:
@@ -103,6 +146,9 @@ definitions:
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+      is_active:
+        example: false
+        type: boolean
       timeout_until:
         example: "2024-03-15T10:00:00+05:30"
         type: string
@@ -181,6 +227,9 @@ definitions:
     type: object
   models.UserRegisterSuccessResponse:
     properties:
+      activation_link:
+        example: http://localhost:8080/api/v1/auth/activate?token=xxxxxxxx
+        type: string
       message:
         example: User Registered Successfully
         type: string
@@ -202,6 +251,38 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /auth/activate:
+    get:
+      description: Activates a user account using the activation token from the query
+        parameter.
+      parameters:
+      - description: Activation Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully activated user account
+          schema:
+            $ref: '#/definitions/models.ActivateUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or expired activation token
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to activate user account
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+      summary: Activate user account
+      tags:
+      - auth
   /auth/forgot-password:
     post:
       consumes:
@@ -262,6 +343,10 @@ paths:
           description: Unauthorized - Invalid credentials
           schema:
             $ref: '#/definitions/models.UserLoginErrorResponse'
+        "403":
+          description: Forbidden - Account not activated
+          schema:
+            $ref: '#/definitions/models.UserLoginErrorResponse'
         "500":
           description: Internal Server Error - Failed to login user
           schema:
@@ -318,6 +403,45 @@ paths:
           schema:
             $ref: '#/definitions/models.UserRegisterErrorResponse'
       summary: Register a new user
+      tags:
+      - auth
+  /auth/resend-activation-link:
+    post:
+      consumes:
+      - application/json
+      description: Resends the activation link to the user's email if the user exists
+        and is not already active.
+      parameters:
+      - description: Request Body for Resending Activation Link
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResendActivationLinkPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully resent activation link
+          schema:
+            $ref: '#/definitions/models.ResendActivationLinkSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ResendActivationLinkErrorResponse'
+        "401":
+          description: Unauthorized - Invalid credentials
+          schema:
+            $ref: '#/definitions/models.ResendActivationLinkErrorResponse'
+        "409":
+          description: Conflict - User already active
+          schema:
+            $ref: '#/definitions/models.ResendActivationLinkErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to resend activation link
+          schema:
+            $ref: '#/definitions/models.ResendActivationLinkErrorResponse'
+      summary: Resend Activation Link
       tags:
       - auth
   /auth/reset-password:

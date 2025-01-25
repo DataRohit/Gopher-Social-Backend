@@ -74,7 +74,21 @@ func (ac *AuthController) Register(c *gin.Context) {
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
+		IsActive:     false,
 	}
+
+	activationToken, err := helpers.GenerateActivationToken(user.ID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Generate Activation Token")
+		c.JSON(http.StatusInternalServerError, models.UserRegisterErrorResponse{
+			Message: "Failed to Register User",
+			Error:   "failed to generate activation token",
+		})
+		return
+	}
+	expiryTime := time.Now().Add(time.Minute * 15)
+	user.ActivationToken = &activationToken
+	user.ActivationTokenExpiry = &expiryTime
 
 	createdUser, err := ac.authStore.CreateUser(c, user)
 	if err != nil {
@@ -94,9 +108,12 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
+	activationLink := fmt.Sprintf("%s/api/v1/auth/activate?token=%s", DOMAIN, activationToken)
+
 	c.JSON(http.StatusCreated, models.UserRegisterSuccessResponse{
-		Message: "User Registered Successfully",
-		User:    createdUser,
+		Message:        "User Registered Successfully",
+		User:           createdUser,
+		ActivationLink: activationLink,
 	})
 }
 
@@ -110,6 +127,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 // @Success      200 {object} models.UserLoginSuccessResponse "Successfully logged in"
 // @Failure      400 {object} models.UserLoginErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.UserLoginErrorResponse "Unauthorized - Invalid credentials"
+// @Failure      403 {object} models.UserLoginErrorResponse "Forbidden - Account not activated"
 // @Failure      500 {object} models.UserLoginErrorResponse "Internal Server Error - Failed to login user"
 // @Router       /auth/login [post]
 func (ac *AuthController) Login(c *gin.Context) {
@@ -129,7 +147,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 				return
 			}
 
-			_, err = ac.authStore.GetUserByID(c, userID)
+			user, err := ac.authStore.GetUserByID(c, userID)
 			if err != nil {
 				if errors.Is(err, stores.ErrUserNotFound) {
 					goto RefreshOrNormalLogin
@@ -141,6 +159,14 @@ func (ac *AuthController) Login(c *gin.Context) {
 					})
 					return
 				}
+			}
+			if !user.IsActive {
+				ac.logger.WithFields(logrus.Fields{"userID": userID}).Error("User Account is Not Active")
+				c.JSON(http.StatusForbidden, models.UserLoginErrorResponse{
+					Message: "Login Failed",
+					Error:   "account not activated",
+				})
+				return
 			}
 
 			c.JSON(http.StatusOK, models.UserLoginSuccessResponse{
@@ -172,6 +198,14 @@ func (ac *AuthController) Login(c *gin.Context) {
 							})
 							return
 						}
+					}
+					if !user.IsActive {
+						ac.logger.WithFields(logrus.Fields{"userID": userID}).Error("User Account is Not Active")
+						c.JSON(http.StatusForbidden, models.UserLoginErrorResponse{
+							Message: "Login Failed",
+							Error:   "account not activated",
+						})
+						return
 					}
 
 					newAccessToken, err := helpers.GenerateAccessToken(user.ID)
@@ -232,6 +266,14 @@ RefreshOrNormalLogin:
 					return
 				}
 			}
+			if !user.IsActive {
+				ac.logger.WithFields(logrus.Fields{"userID": userID}).Error("User Account is Not Active")
+				c.JSON(http.StatusForbidden, models.UserLoginErrorResponse{
+					Message: "Login Failed",
+					Error:   "account not activated",
+				})
+				return
+			}
 
 			newAccessToken, err := helpers.GenerateAccessToken(user.ID)
 			if err != nil {
@@ -289,6 +331,15 @@ NormalLogin:
 				Error:   "failed to authenticate user",
 			})
 		}
+		return
+	}
+
+	if !user.IsActive {
+		ac.logger.WithFields(logrus.Fields{"userID": user.ID}).Error("User Account is Not Active")
+		c.JSON(http.StatusForbidden, models.UserLoginErrorResponse{
+			Message: "Login Failed",
+			Error:   "account not activated",
+		})
 		return
 	}
 
@@ -387,7 +438,7 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 		if errors.Is(err, stores.ErrUserNotFound) {
 			ac.logger.WithFields(logrus.Fields{"identifier": req.Identifier}).Info("Forgot Password Request for Non-Existent User")
 			c.JSON(http.StatusOK, models.ForgotPasswordSuccessResponse{
-				Message: "Password Reset Link Sent Successfully If User Exists",
+				Message: "Password Reset Link Sent Successfully",
 			})
 			return
 		} else {
@@ -425,7 +476,7 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
 
 	c.JSON(http.StatusOK, models.ForgotPasswordSuccessResponse{
-		Message: "Password Reset Link Sent Successfully If User Exists",
+		Message: "Password Reset Link Sent Successfully",
 		Link:    fmt.Sprintf("%s/api/v1/reset-password?token=%s", DOMAIN, resetToken),
 	})
 }
@@ -511,5 +562,154 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.ResetPasswordSuccessResponse{
 		Message: "Password Reset Successfully.",
+	})
+}
+
+// ActivateUser godoc
+// @Summary      Activate user account
+// @Description  Activates a user account using the activation token from the query parameter.
+// @Tags         auth
+// @Produce      json
+// @Param        token query string true "Activation Token"
+// @Success      200 {object} models.ActivateUserSuccessResponse "Successfully activated user account"
+// @Failure      400 {object} models.ActivateUserErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ActivateUserErrorResponse "Unauthorized - Invalid or expired activation token"
+// @Failure      500 {object} models.ActivateUserErrorResponse "Internal Server Error - Failed to activate user account"
+// @Router       /auth/activate [get]
+func (ac *AuthController) ActivateUser(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		ac.logger.WithFields(logrus.Fields{"error": "token missing in query params"}).Error("Invalid Request: Token Missing")
+		c.JSON(http.StatusBadRequest, models.ActivateUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "token is required in query parameters",
+		})
+		return
+	}
+
+	userID, err := ac.authStore.ValidateActivationToken(c, token, time.Now())
+	if err != nil {
+		if errors.Is(err, stores.ErrInvalidOrExpiredActivationToken) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Error("Invalid or Expired Activation Token")
+			c.JSON(http.StatusUnauthorized, models.ActivateUserErrorResponse{
+				Message: "Invalid or Expired Activation Token",
+				Error:   "invalid or expired token",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Error("Failed to Validate Activation Token")
+			c.JSON(http.StatusInternalServerError, models.ActivateUserErrorResponse{
+				Message: "Failed to Activate User",
+				Error:   "failed to validate activation token",
+			})
+		}
+		return
+	}
+
+	err = ac.authStore.ActivateUser(c, userID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": userID}).Error("Failed to Activate User in Store")
+		c.JSON(http.StatusInternalServerError, models.ActivateUserErrorResponse{
+			Message: "Failed to Activate User",
+			Error:   "failed to activate user in database",
+		})
+		return
+	}
+
+	err = ac.authStore.InvalidateActivationToken(c, token)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "token": token}).Warn("Failed to Invalidate Activation Token, But User Activation was Successful")
+	}
+
+	c.JSON(http.StatusOK, models.ActivateUserSuccessResponse{
+		Message: "User Activated Successfully.",
+	})
+}
+
+// ResendActivationLink godoc
+// @Summary      Resend Activation Link
+// @Description  Resends the activation link to the user's email if the user exists and is not already active.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body models.ResendActivationLinkPayload true "Request Body for Resending Activation Link"
+// @Success      200 {object} models.ResendActivationLinkSuccessResponse "Successfully resent activation link"
+// @Failure      400 {object} models.ResendActivationLinkErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ResendActivationLinkErrorResponse "Unauthorized - Invalid credentials"
+// @Failure      409 {object} models.ResendActivationLinkErrorResponse "Conflict - User already active"
+// @Failure      500 {object} models.ResendActivationLinkErrorResponse "Internal Server Error - Failed to resend activation link"
+// @Router       /auth/resend-activation-link [post]
+func (ac *AuthController) ResendActivationLink(c *gin.Context) {
+	var req models.ResendActivationLinkPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Request Body for Resend Activation Link")
+		c.JSON(http.StatusBadRequest, models.ResendActivationLinkErrorResponse{
+			Message: "Invalid Request Body",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	user, err := ac.authStore.GetUserByUsernameOrEmail(c, req.Identifier)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			ac.logger.WithFields(logrus.Fields{"identifier": req.Identifier}).Error("User Not Found for Resend Activation Link")
+			c.JSON(http.StatusUnauthorized, models.ResendActivationLinkErrorResponse{
+				Message: "Resend Activation Link Failed",
+				Error:   "invalid credentials",
+			})
+			return
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "identifier": req.Identifier}).Error("Failed to Get User from Store for Resend Activation Link")
+			c.JSON(http.StatusInternalServerError, models.ResendActivationLinkErrorResponse{
+				Message: "Failed to Resend Activation Link",
+				Error:   "failed to fetch user",
+			})
+			return
+		}
+	}
+
+	if user.IsActive {
+		ac.logger.WithFields(logrus.Fields{"userID": user.ID}).Error("User Already Active, Cannot Resend Activation Link")
+		c.JSON(http.StatusConflict, models.ResendActivationLinkErrorResponse{
+			Message: "Resend Activation Link Failed",
+			Error:   "user already active",
+		})
+		return
+	}
+
+	if err := helpers.ComparePassword(user.PasswordHash, req.Password); err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "identifier": req.Identifier}).Error("Invalid Password for Resend Activation Link")
+		c.JSON(http.StatusUnauthorized, models.ResendActivationLinkErrorResponse{
+			Message: "Resend Activation Link Failed",
+			Error:   "invalid credentials",
+		})
+		return
+	}
+
+	activationToken, err := helpers.GenerateActivationToken(user.ID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Generate New Activation Token for Resend")
+		c.JSON(http.StatusInternalServerError, models.ResendActivationLinkErrorResponse{
+			Message: "Failed to Resend Activation Link",
+			Error:   "failed to generate activation token",
+		})
+		return
+	}
+	expiryTime := time.Now().Add(time.Minute * 15)
+	err = ac.authStore.CreateActivationToken(c, user.ID, activationToken, expiryTime)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": user.ID}).Error("Failed to Save New Activation Token to Store for Resend")
+		c.JSON(http.StatusInternalServerError, models.ResendActivationLinkErrorResponse{
+			Message: "Failed to Resend Activation Link",
+			Error:   "failed to save activation token",
+		})
+		return
+	}
+
+	activationLink := fmt.Sprintf("%s/api/v1/auth/activate?token=%s", DOMAIN, activationToken)
+
+	c.JSON(http.StatusOK, models.ResendActivationLinkSuccessResponse{
+		Message:        "Activation Link Sent Successfully.",
+		ActivationLink: activationLink,
 	})
 }

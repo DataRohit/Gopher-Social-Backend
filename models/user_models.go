@@ -7,18 +7,21 @@ import (
 )
 
 type User struct {
-	ID                 uuid.UUID  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
-	Username           string     `json:"username" example:"john_doe"`
-	Email              string     `json:"email" example:"john.doe@example.com"`
-	PasswordHash       string     `json:"-"`
-	TimeoutUntil       *time.Time `json:"timeout_until,omitempty" example:"2024-03-15T10:00:00+05:30"`
-	Banned             bool       `json:"banned" example:"false"`
-	Followers          []*User    `json:"followers,omitempty"`
-	Following          []*User    `json:"following,omitempty"`
-	CreatedAt          time.Time  `json:"created_at" example:"2024-01-25T07:00:00+05:30"`
-	UpdatedAt          time.Time  `json:"updated_at" example:"2024-01-25T07:00:00+05:30"`
-	PasswordResetToken *string    `json:"-"`
-	ResetTokenExpiry   *time.Time `json:"-"`
+	ID                    uuid.UUID  `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Username              string     `json:"username" example:"john_doe"`
+	Email                 string     `json:"email" example:"john.doe@example.com"`
+	PasswordHash          string     `json:"-"`
+	TimeoutUntil          *time.Time `json:"timeout_until,omitempty" example:"2024-03-15T10:00:00+05:30"`
+	Banned                bool       `json:"banned" example:"false"`
+	IsActive              bool       `json:"is_active" example:"false"`
+	Followers             []*User    `json:"followers,omitempty"`
+	Following             []*User    `json:"following,omitempty"`
+	CreatedAt             time.Time  `json:"created_at" example:"2024-01-25T07:00:00+05:30"`
+	UpdatedAt             time.Time  `json:"updated_at" example:"2024-01-25T07:00:00+05:30"`
+	PasswordResetToken    *string    `json:"-"`
+	ResetTokenExpiry      *time.Time `json:"-"`
+	ActivationToken       *string    `json:"-"`
+	ActivationTokenExpiry *time.Time `json:"-"`
 }
 
 // User Register Models
@@ -28,8 +31,9 @@ type UserRegisterPayload struct {
 	Password string `json:"password" binding:"required,min=8,max=64" example:"P@$$wOrd"`
 }
 type UserRegisterSuccessResponse struct {
-	Message string `json:"message" example:"User Registered Successfully"`
-	User    *User  `json:"user"`
+	Message        string `json:"message" example:"User Registered Successfully"`
+	User           *User  `json:"user"`
+	ActivationLink string `json:"activation_link,omitempty" example:"http://localhost:8080/api/v1/auth/activate?token=xxxxxxxx"`
 }
 
 type UserRegisterErrorResponse struct {
@@ -87,6 +91,31 @@ type ResetPasswordSuccessResponse struct {
 }
 
 type ResetPasswordErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// User Activation Models
+type ActivateUserSuccessResponse struct {
+	Message string `json:"message" example:"User Activated Successfully."`
+}
+
+type ActivateUserErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+type ResendActivationLinkPayload struct {
+	Identifier string `json:"identifier" binding:"required" example:"john_doe / john.doe@example.com"`
+	Password   string `json:"password" binding:"required,min=8,max=64" example:"P@$$wOrd"`
+}
+
+type ResendActivationLinkSuccessResponse struct {
+	Message        string `json:"message" example:"Activation Link Sent Successfully."`
+	ActivationLink string `json:"activation_link,omitempty" example:"http://localhost:8080/api/v1/auth/activate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzc4MDI5ODEsInVzZXJfaWQiOiI1MzAzODI0OS02Yjk4LTQ2YzUtOWQ1YS00ZDdkYjY5MmJiOGMifQ.pxrhavurRWfBlgAYShPnFl7rVcaJn8TsDHM-ZtcuAVg"`
+}
+
+type ResendActivationLinkErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }

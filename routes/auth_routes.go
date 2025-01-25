@@ -24,6 +24,8 @@ import (
 //   - /auth/logout (POST): Route to logout user and invalidate JWT tokens.
 //   - /auth/forgot-password (POST): Route to initiate forgot password flow.
 //   - /auth/reset-password (POST): Route to reset password using reset token.
+//   - /auth/activate (GET): Route to activate user account using activation token.
+//   - /auth/resend-activation-link (POST): Route to resend activation link.
 func AuthRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	authController := controllers.NewAuthController(authStore, logger)
@@ -34,4 +36,6 @@ func AuthRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Lo
 	authRouter.POST("/logout", authController.Logout)
 	authRouter.POST("/forgot-password", authController.ForgotPassword)
 	authRouter.POST("/reset-password", authController.ResetPassword)
+	authRouter.GET("/activate", authController.ActivateUser)
+	authRouter.POST("/resend-activation-link", authController.ResendActivationLink)
 }
