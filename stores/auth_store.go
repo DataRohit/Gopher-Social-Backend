@@ -205,6 +205,15 @@ func (as *AuthStore) CreatePasswordResetToken(ctx context.Context, userID uuid.U
 }
 
 // CreateActivationToken stores an activation token and its expiry time for a user.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): User ID for whom to create the activation token.
+//   - token (string): The activation token.
+//   - expiryTime (time.Time): The expiry time of the token.
+//
+// Returns:
+//   - error: An error if storing the token fails.
 func (as *AuthStore) CreateActivationToken(ctx context.Context, userID uuid.UUID, token string, expiryTime time.Time) error {
 	_, err := as.dbPool.Exec(ctx, `
 		UPDATE users
@@ -355,6 +364,13 @@ func (as *AuthStore) UpdateUserPassword(ctx context.Context, userID uuid.UUID, h
 }
 
 // ActivateUser updates a user's is_active status to true in the database.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user to activate.
+//
+// Returns:
+//   - error: An error if activating the user fails.
 func (as *AuthStore) ActivateUser(ctx context.Context, userID uuid.UUID) error {
 	_, err := as.dbPool.Exec(ctx, `
 		UPDATE users
