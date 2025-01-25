@@ -234,13 +234,9 @@ definitions:
         example: john.doe@example.com
         type: string
       followers:
-        items:
-          $ref: '#/definitions/models.User'
-        type: array
+        type: integer
       following:
-        items:
-          $ref: '#/definitions/models.User'
-        type: array
+        type: integer
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string

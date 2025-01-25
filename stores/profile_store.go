@@ -133,7 +133,9 @@ func (ps *ProfileStore) GetProfileByUserID(ctx context.Context, userID uuid.UUID
 		SELECT
 			p.id, p.user_id, p.first_name, p.last_name, p.website, p.github, p.linkedin, p.twitter, p.google_scholar, p.created_at, p.updated_at,
 			u.id, u.username, u.email, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at,
-			r.level, r.description
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
 		FROM profiles p
 		INNER JOIN users u ON p.user_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
@@ -142,6 +144,7 @@ func (ps *ProfileStore) GetProfileByUserID(ctx context.Context, userID uuid.UUID
 		&profile.ID, &profile.UserID, &profile.FirstName, &profile.LastName, &profile.Website, &profile.Github, &profile.LinkedIn, &profile.Twitter, &profile.GoogleScholar, &profile.CreatedAt, &profile.UpdatedAt,
 		&profile.User.ID, &profile.User.Username, &profile.User.Email, &profile.User.TimeoutUntil, &profile.User.Banned, &profile.User.IsActive, &profile.User.CreatedAt, &profile.User.UpdatedAt,
 		&profile.User.Role.Level, &profile.User.Role.Description,
+		&profile.User.Followers, &profile.User.Following,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

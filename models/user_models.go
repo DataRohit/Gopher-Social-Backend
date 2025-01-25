@@ -16,8 +16,8 @@ type User struct {
 	TimeoutUntil          *time.Time `json:"timeout_until,omitempty" example:"2025-01-25T12:34:01.159498Z"`
 	Banned                bool       `json:"banned" example:"false"`
 	IsActive              bool       `json:"is_active" example:"false"`
-	Followers             []*User    `json:"followers,omitempty"`
-	Following             []*User    `json:"following,omitempty"`
+	Followers             uint       `json:"followers"`
+	Following             uint       `json:"following"`
 	CreatedAt             time.Time  `json:"created_at" example:"2025-01-25T12:34:01.159498Z"`
 	UpdatedAt             time.Time  `json:"updated_at" example:"2025-01-25T12:34:01.159498Z"`
 	PasswordResetToken    *string    `json:"-"`

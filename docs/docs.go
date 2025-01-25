@@ -896,16 +896,10 @@ const docTemplate = `{
                     "example": "john.doe@example.com"
                 },
                 "followers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.User"
-                    }
+                    "type": "integer"
                 },
                 "following": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.User"
-                    }
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string",

@@ -104,13 +104,18 @@ func (as *AuthStore) GetUserByUsernameOrEmail(ctx context.Context, identifier st
 	var user models.User
 	user.Role = &models.Role{}
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		SELECT
+			u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
 		FROM users u
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE u.username = $1 OR u.email = $1
 	`, identifier).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
 		&user.Role.Level, &user.Role.Description,
+		&user.Followers, &user.Following,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -135,13 +140,18 @@ func (as *AuthStore) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Use
 	var user models.User
 	user.Role = &models.Role{}
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		SELECT
+			u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
 		FROM users u
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE u.id = $1
 	`, id).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
 		&user.Role.Level, &user.Role.Description,
+		&user.Followers, &user.Following,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -164,14 +174,20 @@ func (as *AuthStore) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Use
 //   - error: ErrUserNotFound if user not found or other errors during database query.
 func (as *AuthStore) GetUserByActivationToken(ctx context.Context, tokenString string) (*models.User, error) {
 	var user models.User
+	user.Role = &models.Role{}
 	err := as.dbPool.QueryRow(ctx, `
-		SELECT u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry, r.level as role_level, r.description as role_description
+		SELECT
+			u.id, u.username, u.email, u.password_hash, u.role_id, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at, u.password_reset_token, u.reset_token_expiry, u.activation_token, u.activation_token_expiry,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
 		FROM users u
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE u.activation_token = $1
 	`, tokenString).Scan(
 		&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.RoleID, &user.TimeoutUntil, &user.Banned, &user.IsActive, &user.CreatedAt, &user.UpdatedAt, &user.PasswordResetToken, &user.ResetTokenExpiry, &user.ActivationToken, &user.ActivationTokenExpiry,
 		&user.Role.Level, &user.Role.Description,
+		&user.Followers, &user.Following,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
