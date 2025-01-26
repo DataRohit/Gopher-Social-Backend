@@ -76,3 +76,14 @@ type DeletePostErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List My Posts Models
+type ListMyPostsSuccessResponse struct {
+	Message string  `json:"message" example:"User Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListMyPostsErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

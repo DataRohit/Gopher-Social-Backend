@@ -24,6 +24,7 @@ import (
 //   - PUT /post/:postID: Route to update an existing post. Requires authentication and author role.
 //   - DELETE /post/:postID: Route to delete an existing post. Requires authentication and author role.
 //   - GET /post/:postID: Route to get a post by ID. Requires authentication.
+//   - GET /post/me: Route to list posts created by the logged-in user. Requires authentication.
 func PostRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	postStore := stores.NewPostStore(dbPool, authStore)
@@ -35,4 +36,5 @@ func PostRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Lo
 	postRouter.PUT("/:postID", postController.UpdatePost)
 	postRouter.DELETE("/:postID", postController.DeletePost)
 	postRouter.GET("/:postID", postController.GetPost)
+	postRouter.GET("/me", postController.ListMyPosts)
 }

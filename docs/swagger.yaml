@@ -211,6 +211,23 @@ definitions:
       profile:
         $ref: '#/definitions/models.Profile'
     type: object
+  models.ListMyPostsErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListMyPostsSuccessResponse:
+    properties:
+      message:
+        example: User Posts Retrieved Successfully
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+    type: object
   models.Post:
     properties:
       author:
@@ -1029,6 +1046,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a new post
+      tags:
+      - posts
+  /post/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts created by the logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of user's posts
+          schema:
+            $ref: '#/definitions/models.ListMyPostsSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListMyPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch user's posts
+          schema:
+            $ref: '#/definitions/models.ListMyPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List posts of logged-in user
       tags:
       - posts
   /profile/{identifier}:

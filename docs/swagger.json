@@ -497,6 +497,46 @@
                 }
             }
         },
+        "/post/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts created by the logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "List posts of logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of user's posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListMyPostsSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListMyPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch user's posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListMyPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}": {
             "get": {
                 "security": [
@@ -1533,6 +1573,32 @@
                 },
                 "profile": {
                     "$ref": "#/definitions/models.Profile"
+                }
+            }
+        },
+        "models.ListMyPostsErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListMyPostsSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Posts Retrieved Successfully"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Post"
+                    }
                 }
             }
         },

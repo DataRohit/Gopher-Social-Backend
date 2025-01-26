@@ -393,3 +393,42 @@ func (pc *PostController) GetPost(c *gin.Context) {
 		Post:    retrievedPost,
 	})
 }
+
+// ListMyPosts godoc
+// @Summary      List posts of logged-in user
+// @Description  Retrieves a list of posts created by the logged-in user.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} models.ListMyPostsSuccessResponse "Successfully retrieved list of user's posts"
+// @Failure      401 {object} models.ListMyPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      500 {object} models.ListMyPostsErrorResponse "Internal Server Error - Failed to fetch user's posts"
+// @Router       /post/me [get]
+func (pc *PostController) ListMyPosts(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListMyPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := user.(*models.User)
+
+	posts, err := pc.postStore.ListPostsByAuthorID(c, userModel.ID)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get posts by author ID from store")
+		c.JSON(http.StatusInternalServerError, models.ListMyPostsErrorResponse{
+			Message: "Failed to Get User Posts",
+			Error:   "could not retrieve posts from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListMyPostsSuccessResponse{
+		Message: "User Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}

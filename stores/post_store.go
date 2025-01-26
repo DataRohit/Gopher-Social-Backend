@@ -159,3 +159,44 @@ func (ps *PostStore) DeletePost(ctx context.Context, postID uuid.UUID) error {
 
 	return nil
 }
+
+// ListPostsByAuthorID retrieves all posts from the database for a given author ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - authorID (uuid.UUID): ID of the author whose posts are to be retrieved.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no posts are found.
+//   - error: An error if the database query fails.
+func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID) ([]*models.Post, error) {
+	rows, err := ps.dbPool.Query(ctx, `
+		SELECT
+			id, author_id, title, sub_title, description, content, created_at, updated_at
+		FROM posts
+		WHERE author_id = $1
+		ORDER BY created_at DESC
+	`, authorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list posts by author id: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []*models.Post
+	for rows.Next() {
+		post := &models.Post{}
+		err := rows.Scan(
+			&post.ID, &post.AuthorID, &post.Title, &post.SubTitle, &post.Description, &post.Content, &post.CreatedAt, &post.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan post row: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during posts rows iteration: %w", err)
+	}
+
+	return posts, nil
+}
