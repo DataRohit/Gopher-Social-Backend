@@ -1707,7 +1707,7 @@ paths:
       - BearerAuth: []
       summary: Get followers of a user by identifier
       tags:
-      - follow
+      - user_follow
   /user/{identifier}/following:
     get:
       consumes:
@@ -1752,7 +1752,7 @@ paths:
       - BearerAuth: []
       summary: Get users being followed by a user by identifier
       tags:
-      - follow
+      - user_follow
   /user/follow/{identifier}:
     post:
       consumes:
@@ -1799,7 +1799,7 @@ paths:
       - BearerAuth: []
       summary: Follow a user
       tags:
-      - follow
+      - user_follow
   /user/followers:
     get:
       consumes:
@@ -1830,7 +1830,7 @@ paths:
       - BearerAuth: []
       summary: Get followers of logged-in user
       tags:
-      - follow
+      - user_follow
   /user/following:
     get:
       consumes:
@@ -1861,7 +1861,7 @@ paths:
       - BearerAuth: []
       summary: Get users being followed by logged-in user
       tags:
-      - follow
+      - user_follow
   /user/unfollow/{identifier}:
     delete:
       consumes:
@@ -1904,7 +1904,7 @@ paths:
       - BearerAuth: []
       summary: Unfollow a user
       tags:
-      - follow
+      - user_follow
 securityDefinitions:
   BasicAuth:
     type: basic

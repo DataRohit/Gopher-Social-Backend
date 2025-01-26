@@ -1500,7 +1500,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Follow a user",
                 "parameters": [
@@ -1573,7 +1573,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Get followers of logged-in user",
                 "parameters": [
@@ -1622,7 +1622,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Get users being followed by logged-in user",
                 "parameters": [
@@ -1671,7 +1671,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Unfollow a user",
                 "parameters": [
@@ -1738,7 +1738,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Get followers of a user by identifier",
                 "parameters": [
@@ -1806,7 +1806,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "follow"
+                    "user_follow"
                 ],
                 "summary": "Get users being followed by a user by identifier",
                 "parameters": [

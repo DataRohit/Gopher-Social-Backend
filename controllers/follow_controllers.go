@@ -42,7 +42,7 @@ func NewFollowController(authStore *stores.AuthStore, profileStore *stores.Profi
 // FollowUser godoc
 // @Summary      Follow a user
 // @Description  Allows a logged-in user to follow another user.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
@@ -137,7 +137,7 @@ func (fc *FollowController) FollowUser(c *gin.Context) {
 // UnfollowUser godoc
 // @Summary      Unfollow a user
 // @Description  Allows a logged-in user to unfollow another user.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
@@ -231,7 +231,7 @@ func (fc *FollowController) UnfollowUser(c *gin.Context) {
 // GetFollowers godoc
 // @Summary      Get followers of logged-in user
 // @Description  Retrieves a list of users who are following the logged-in user.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
@@ -272,7 +272,7 @@ func (fc *FollowController) GetFollowers(c *gin.Context) {
 // GetFollowing godoc
 // @Summary      Get users being followed by logged-in user
 // @Description  Retrieves a list of users that the logged-in user is following.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
@@ -313,7 +313,7 @@ func (fc *FollowController) GetFollowing(c *gin.Context) {
 // GetUserFollowers godoc
 // @Summary      Get followers of a user by identifier
 // @Description  Retrieves a list of users who are following the user identified by identifier.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
@@ -373,7 +373,7 @@ func (fc *FollowController) GetUserFollowers(c *gin.Context) {
 // GetUserFollowing godoc
 // @Summary      Get users being followed by a user by identifier
 // @Description  Retrieves a list of users that the user identified by identifier is following.
-// @Tags         follow
+// @Tags         user_follow
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
