@@ -71,6 +71,7 @@ func main() {
 	routes.ProfileRoutes(apiv1, database.PostgresDB, logger)
 	routes.FollowRoutes(apiv1, database.PostgresDB, logger)
 	routes.PostRoutes(apiv1, database.PostgresDB, logger)
+	routes.PostLikeRoutes(apiv1, database.PostgresDB, logger)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

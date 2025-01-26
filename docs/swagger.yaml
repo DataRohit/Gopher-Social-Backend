@@ -61,6 +61,19 @@ definitions:
         example: Post Deleted Successfully
         type: string
     type: object
+  models.DislikePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.DislikePostSuccessResponse:
+    properties:
+      message:
+        example: Post Disliked Successfully
+        type: string
+    type: object
   models.FollowUserErrorResponse:
     properties:
       error:
@@ -421,6 +434,19 @@ definitions:
     properties:
       status:
         example: Router Healthy!
+        type: string
+    type: object
+  models.UndislikePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UndislikePostSuccessResponse:
+    properties:
+      message:
+        example: Post Undisliked Successfully
         type: string
     type: object
   models.UnfollowUserErrorResponse:
@@ -1053,7 +1079,96 @@ paths:
       summary: Update an existing post
       tags:
       - posts
+  /post/{postID}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to dislike a post by post identifier (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully disliked post
+          schema:
+            $ref: '#/definitions/models.DislikePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+        "409":
+          description: Conflict - Already disliked post
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to dislike post
+          schema:
+            $ref: '#/definitions/models.DislikePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dislike a post
+      tags:
+      - post_likes
   /post/{postID}/like:
+    delete:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to unlike a post by post identifier (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully unliked post
+          schema:
+            $ref: '#/definitions/models.UnlikePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "404":
+          description: Not Found - Post not found or like not found
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to unlike post
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unlike a post
+      tags:
+      - post_likes
     post:
       consumes:
       - application/json
@@ -1100,11 +1215,12 @@ paths:
       summary: Like a post
       tags:
       - post_likes
-  /post/{postID}/unlike:
+  /post/{postID}/undislike:
     delete:
       consumes:
       - application/json
-      description: Allows a logged-in user to unlike a post by post identifier (postID).
+      description: Allows a logged-in user to undislike a post by post identifier
+        (postID).
       parameters:
       - description: Post Identifier (Post ID)
         in: path
@@ -1115,32 +1231,32 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successfully unliked post
+          description: Successfully undisliked post
           schema:
-            $ref: '#/definitions/models.UnlikePostSuccessResponse'
+            $ref: '#/definitions/models.UndislikePostSuccessResponse'
         "400":
           description: Bad Request - Invalid input
           schema:
-            $ref: '#/definitions/models.UnlikePostErrorResponse'
+            $ref: '#/definitions/models.UndislikePostErrorResponse'
         "401":
           description: Unauthorized - User not logged in or invalid token
           schema:
-            $ref: '#/definitions/models.UnlikePostErrorResponse'
+            $ref: '#/definitions/models.UndislikePostErrorResponse'
         "403":
           description: Forbidden - User account is inactive or banned
           schema:
-            $ref: '#/definitions/models.UnlikePostErrorResponse'
+            $ref: '#/definitions/models.UndislikePostErrorResponse'
         "404":
-          description: Not Found - Post not found or like not found
+          description: Not Found - Post not found or dislike not found
           schema:
-            $ref: '#/definitions/models.UnlikePostErrorResponse'
+            $ref: '#/definitions/models.UndislikePostErrorResponse'
         "500":
-          description: Internal Server Error - Failed to unlike post
+          description: Internal Server Error - Failed to undislike post
           schema:
-            $ref: '#/definitions/models.UnlikePostErrorResponse'
+            $ref: '#/definitions/models.UndislikePostErrorResponse'
       security:
       - BearerAuth: []
-      summary: Unlike a post
+      summary: Undislike a post
       tags:
       - post_likes
   /post/create:

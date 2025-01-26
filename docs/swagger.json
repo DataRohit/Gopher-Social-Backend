@@ -792,6 +792,79 @@
                 }
             }
         },
+        "/post/{postID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to dislike a post by post identifier (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "Dislike a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully disliked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Already disliked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to dislike post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/like": {
             "post": {
                 "security": [
@@ -863,9 +936,7 @@
                         }
                     }
                 }
-            }
-        },
-        "/post/{postID}/unlike": {
+            },
             "delete": {
                 "security": [
                     {
@@ -927,6 +998,73 @@
                         "description": "Internal Server Error - Failed to unlike post",
                         "schema": {
                             "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/post/{postID}/undislike": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to undislike a post by post identifier (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "Undislike a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully undisliked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found or dislike not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to undislike post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikePostErrorResponse"
                         }
                     }
                 }
@@ -1548,6 +1686,26 @@
                 }
             }
         },
+        "models.DislikePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DislikePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Disliked Successfully"
+                }
+            }
+        },
         "models.FollowUserErrorResponse": {
             "type": "object",
             "properties": {
@@ -2083,6 +2241,26 @@
                 "status": {
                     "type": "string",
                     "example": "Router Healthy!"
+                }
+            }
+        },
+        "models.UndislikePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UndislikePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Undisliked Successfully"
                 }
             }
         },
