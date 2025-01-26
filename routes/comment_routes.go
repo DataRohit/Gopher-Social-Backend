@@ -25,6 +25,7 @@ import (
 //   - DELETE /post/:postID/comment/:commentID/delete: Route to delete a comment on a post. Requires authentication.
 //   - GET /post/:postID/comment/:commentID: Route to get a comment by comment ID and post ID. No authentication required.
 //   - GET /post/:postID/comment/user/me: Route to list all comments of logged in user for a post. Requires authentication.
+//   - GET /post/:postID/comment/user/:identifier: Route to list all comments of a user for a post. No authentication required.
 func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	commentStore := stores.NewCommentStore(dbPool)
 	postStore := stores.NewPostStore(dbPool)
@@ -38,4 +39,5 @@ func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus
 	commentRouter.DELETE("/:commentID/delete", commentController.DeleteComment)
 	commentRouter.GET("/:commentID", commentController.GetComment)
 	commentRouter.GET("/user/me", middlewares.PaginationMiddleware(), commentController.ListMyComments)
+	commentRouter.GET("/user/:identifier", middlewares.PaginationMiddleware(), commentController.ListCommentsByUserIdentifier)
 }

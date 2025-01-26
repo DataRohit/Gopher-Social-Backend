@@ -503,3 +503,63 @@ func (cc *CommentController) ListMyComments(c *gin.Context) {
 		Comments: comments,
 	})
 }
+
+// ListCommentsByUserIdentifier godoc
+// @Summary List comments of a user for a post
+// @Description List comments of a user for a post using user identifier (username or email or userID). No authentication required.
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Param identifier path string true "User Identifier (username or email or userID)" example:"john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
+// @Success 200 {object} models.ListUserCommentsSuccessResponse
+// @Failure 400 {object} models.ListUserCommentsErrorResponse
+// @Failure 404 {object} models.ListUserCommentsErrorResponse
+// @Failure 500 {object} models.ListUserCommentsErrorResponse
+// @Router /post/{postID}/comment/user/{identifier} [get]
+func (cc *CommentController) ListCommentsByUserIdentifier(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	identifier := c.Param("identifier")
+
+	if postIDStr == "" || identifier == "" {
+		cc.logger.Error("Post ID and User Identifier are required")
+		c.JSON(http.StatusBadRequest, models.ListUserCommentsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and identifier are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.ListUserCommentsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+	comments, err := cc.commentStore.ListCommentsByUserIdentifierForPost(c.Request.Context(), identifier, postID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, models.ListUserCommentsErrorResponse{
+				Message: "Not Found",
+				Error:   "user not found",
+			})
+			return
+		}
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to list comments from store")
+		c.JSON(http.StatusInternalServerError, models.ListUserCommentsErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to list comments",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListUserCommentsSuccessResponse{
+		Message:  "Comments Retrieved Successfully",
+		Comments: comments,
+	})
+}

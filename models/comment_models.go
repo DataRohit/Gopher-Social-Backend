@@ -78,3 +78,14 @@ type ListMyCommentsErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List User Comments Models
+type ListUserCommentsSuccessResponse struct {
+	Message  string     `json:"message" example:"Comments Retrieved Successfully"`
+	Comments []*Comment `json:"comments"`
+}
+
+type ListUserCommentsErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

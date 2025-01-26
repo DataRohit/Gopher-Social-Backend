@@ -1144,6 +1144,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/user/{identifier}": {
+            "get": {
+                "description": "List comments of a user for a post using user identifier (username or email or userID). No authentication required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "List comments of a user for a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username or email or userID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserCommentsSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserCommentsErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserCommentsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserCommentsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/{commentID}": {
             "get": {
                 "description": "Get a comment by comment ID and post ID. No authentication required.",
@@ -2761,6 +2818,32 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Post"
                     }
+                }
+            }
+        },
+        "models.ListUserCommentsErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListUserCommentsSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Comments Retrieved Successfully"
                 }
             }
         },

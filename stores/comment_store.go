@@ -11,12 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// ErrCommentNotFound is returned when a comment is not found.
-var ErrCommentNotFound = errors.New("comment not found")
-
 type CommentStore struct {
 	dbPool *pgxpool.Pool
 }
+
+// ErrCommentNotFound is returned when a comment is not found.
+var ErrCommentNotFound = errors.New("comment not found")
 
 // NewCommentStore creates a new CommentStore.
 //
@@ -221,4 +221,37 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 	}
 
 	return comments, nil
+}
+
+// ListCommentsByUserIdentifierForPost retrieves all comments for a given post made by a user identifier (username or email or userID) from the database with pagination.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string):  Username or Email or UserID of the author of comments.
+//   - postID (uuid.UUID): ID of the post to which the comments belongs.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Number of comments per page.
+//
+// Returns:
+//   - []*models.Comment: List of comments if found.
+//   - error: An error if retrieval fails.
+func (cs *CommentStore) ListCommentsByUserIdentifierForPost(ctx context.Context, identifier string, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	authStore := NewAuthStore(cs.dbPool) // Create a new AuthStore instance
+	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			userID, uuidErr := uuid.Parse(identifier)
+			if uuidErr != nil {
+				return nil, ErrUserNotFound
+			}
+			user, err = authStore.GetUserByID(ctx, userID)
+			if err != nil {
+				return nil, ErrUserNotFound
+			}
+		} else {
+			return nil, fmt.Errorf("failed to get user by identifier: %w", err)
+		}
+	}
+
+	return cs.ListCommentsByAuthorIDForPost(ctx, user.ID, postID, pageNumber, pageSize)
 }
