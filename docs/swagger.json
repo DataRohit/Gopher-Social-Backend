@@ -497,6 +497,86 @@
                 }
             }
         },
+        "/post/disliked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts disliked by the logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "List disliked posts of logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of disliked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch disliked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/post/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts liked by the logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "List liked posts of logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of liked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch liked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/me": {
             "get": {
                 "security": [
@@ -1952,6 +2032,58 @@
                 "message": {
                     "type": "string",
                     "example": "Post Liked Successfully"
+                }
+            }
+        },
+        "models.ListDislikedPostsErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListDislikedPostsSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Disliked Posts Retrieved Successfully"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Post"
+                    }
+                }
+            }
+        },
+        "models.ListLikedPostsErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListLikedPostsSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Liked Posts Retrieved Successfully"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Post"
+                    }
                 }
             }
         },

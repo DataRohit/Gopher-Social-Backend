@@ -237,6 +237,40 @@ definitions:
         example: Post Liked Successfully
         type: string
     type: object
+  models.ListDislikedPostsErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListDislikedPostsSuccessResponse:
+    properties:
+      message:
+        example: Disliked Posts Retrieved Successfully
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+    type: object
+  models.ListLikedPostsErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListLikedPostsSuccessResponse:
+    properties:
+      message:
+        example: Liked Posts Retrieved Successfully
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+    type: object
   models.ListMyPostsErrorResponse:
     properties:
       error:
@@ -1299,6 +1333,56 @@ paths:
       summary: Create a new post
       tags:
       - posts
+  /post/disliked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts disliked by the logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of disliked posts
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch disliked posts
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List disliked posts of logged-in user
+      tags:
+      - post_likes
+  /post/liked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts liked by the logged-in user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of liked posts
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch liked posts
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List liked posts of logged-in user
+      tags:
+      - post_likes
   /post/me:
     get:
       consumes:

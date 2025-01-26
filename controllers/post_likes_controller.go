@@ -391,3 +391,81 @@ func (plc *PostLikesController) UndislikePost(c *gin.Context) {
 		Message: "Post Undisliked Successfully",
 	})
 }
+
+// ListLikedPosts godoc
+// @Summary      List liked posts of logged-in user
+// @Description  Retrieves a list of posts liked by the logged-in user.
+// @Tags         post_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} models.ListLikedPostsSuccessResponse "Successfully retrieved list of liked posts"
+// @Failure      401 {object} models.ListLikedPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      500 {object} models.ListLikedPostsErrorResponse "Internal Server Error - Failed to fetch liked posts"
+// @Router       /post/liked [get]
+func (plc *PostLikesController) ListLikedPosts(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		plc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListLikedPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	posts, err := plc.postLikesStore.ListLikedPostsByUserID(c, userModel.ID)
+	if err != nil {
+		plc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get liked posts from store")
+		c.JSON(http.StatusInternalServerError, models.ListLikedPostsErrorResponse{
+			Message: "Failed to Get Liked Posts",
+			Error:   "could not retrieve liked posts from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListLikedPostsSuccessResponse{
+		Message: "Liked Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}
+
+// ListDislikedPosts godoc
+// @Summary      List disliked posts of logged-in user
+// @Description  Retrieves a list of posts disliked by the logged-in user.
+// @Tags         post_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} models.ListDislikedPostsSuccessResponse "Successfully retrieved list of disliked posts"
+// @Failure      401 {object} models.ListDislikedPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      500 {object} models.ListDislikedPostsErrorResponse "Internal Server Error - Failed to fetch disliked posts"
+// @Router       /post/disliked [get]
+func (plc *PostLikesController) ListDislikedPosts(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		plc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListDislikedPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	posts, err := plc.postLikesStore.ListDislikedPostsByUserID(c, userModel.ID)
+	if err != nil {
+		plc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get disliked posts from store")
+		c.JSON(http.StatusInternalServerError, models.ListDislikedPostsErrorResponse{
+			Message: "Failed to Get Disliked Posts",
+			Error:   "could not retrieve disliked posts from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListDislikedPostsSuccessResponse{
+		Message: "Disliked Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}

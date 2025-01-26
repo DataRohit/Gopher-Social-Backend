@@ -24,6 +24,8 @@ import (
 //   - DELETE /post/:postID/unlike: Route to unlike a post. Requires authentication.
 //   - POST /post/:postID/dislike: Route to dislike a post. Requires authentication.
 //   - DELETE /post/:postID/undislike: Route to undislike a post. Requires authentication.
+//   - GET /post/liked: Route to get all liked posts by logged-in user. Requires authentication.
+//   - GET /post/disliked: Route to get all disliked posts by logged-in user. Requires authentication.
 func PostLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	postStore := stores.NewPostStore(dbPool, authStore)
@@ -36,4 +38,6 @@ func PostLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logru
 	postLikeRouter.DELETE("/:postID/unlike", postLikesController.UnlikePost)
 	postLikeRouter.POST("/:postID/dislike", postLikesController.DislikePost)
 	postLikeRouter.DELETE("/:postID/undislike", postLikesController.UndislikePost)
+	postLikeRouter.GET("/liked", postLikesController.ListLikedPosts)
+	postLikeRouter.GET("/disliked", postLikesController.ListDislikedPosts)
 }

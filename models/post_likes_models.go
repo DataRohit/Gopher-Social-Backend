@@ -60,3 +60,25 @@ type UndislikePostErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List Liked Posts Models
+type ListLikedPostsSuccessResponse struct {
+	Message string  `json:"message" example:"Liked Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListLikedPostsErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// List Disliked Posts Models
+type ListDislikedPostsSuccessResponse struct {
+	Message string  `json:"message" example:"Disliked Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListDislikedPostsErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

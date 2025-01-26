@@ -230,3 +230,87 @@ func (pls *PostLikeStore) GetPostLikeByUserAndPost(ctx context.Context, userID u
 
 	return &postLike, nil
 }
+
+// ListLikedPostsByUserID retrieves all posts liked by a user from the database.
+// It returns a list of posts with like and dislike counts, and author information including follower and following counts.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no liked posts are found.
+//   - error: An error if the database query fails.
+func (pls *PostLikeStore) ListLikedPostsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatus(ctx, userID, true)
+}
+
+// ListDislikedPostsByUserID retrieves all posts disliked by a user from the database.
+// It returns a list of posts with like and dislike counts, and author information including follower and following counts.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no disliked posts are found.
+//   - error: An error if the database query fails.
+func (pls *PostLikeStore) ListDislikedPostsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatus(ctx, userID, false)
+}
+
+// listPostsByLikeStatus is a helper function to retrieve posts based on like status (liked or disliked).
+// It is used by ListLikedPostsByUserID and ListDislikedPostsByUserID to avoid code duplication.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user.
+//   - liked (bool): True to retrieve liked posts, false for disliked posts.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the given like status.
+//   - error: An error if the database query fails.
+func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid.UUID, liked bool) ([]*models.Post, error) {
+	rows, err := pls.dbPool.Query(ctx, `
+		SELECT
+			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
+			u.username, u.email,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
+			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM post_likes pl
+		INNER JOIN posts p ON pl.post_id = p.id
+		INNER JOIN users u ON p.author_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE pl.user_id = $1 AND pl.liked = $2
+		ORDER BY p.created_at DESC
+	`, userID, liked)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list posts by like status: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []*models.Post
+	for rows.Next() {
+		post := &models.Post{Author: &models.User{Role: &models.Role{}}}
+		err := rows.Scan(
+			&post.ID, &post.AuthorID, &post.Title, &post.SubTitle, &post.Description, &post.Content, &post.CreatedAt, &post.UpdatedAt,
+			&post.Author.Username, &post.Author.Email,
+			&post.Author.Role.Level, &post.Author.Role.Description,
+			&post.Likes, &post.Dislikes,
+			&post.Author.Followers, &post.Author.Following,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan post row: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during posts rows iteration: %w", err)
+	}
+
+	return posts, nil
+}
