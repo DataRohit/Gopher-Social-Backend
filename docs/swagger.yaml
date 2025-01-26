@@ -343,6 +343,23 @@ definitions:
           $ref: '#/definitions/models.Post'
         type: array
     type: object
+  models.ListMyCommentsErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListMyCommentsSuccessResponse:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      message:
+        example: Comments Retrieved Successfully
+        type: string
+    type: object
   models.ListMyPostsErrorResponse:
     properties:
       error:
@@ -1390,6 +1407,41 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a new comment on a post
+      tags:
+      - comments
+  /post/{postID}/comment/user/me:
+    get:
+      consumes:
+      - application/json
+      description: List comments of logged in user for a post. Requires authentication.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ListMyCommentsSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ListMyCommentsErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ListMyCommentsErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ListMyCommentsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List comments of logged in user for a post
       tags:
       - comments
   /post/{postID}/dislike:

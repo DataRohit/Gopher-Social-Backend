@@ -23,6 +23,8 @@ import (
 //   - POST /post/:postID/comment/create: Route to create a comment on a post. Requires authentication.
 //   - PUT /post/:postID/comment/:commentID/update: Route to update a comment on a post. Requires authentication.
 //   - DELETE /post/:postID/comment/:commentID/delete: Route to delete a comment on a post. Requires authentication.
+//   - GET /post/:postID/comment/:commentID: Route to get a comment by comment ID and post ID. No authentication required.
+//   - GET /post/:postID/comment/user/me: Route to list all comments of logged in user for a post. Requires authentication.
 func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	commentStore := stores.NewCommentStore(dbPool)
 	postStore := stores.NewPostStore(dbPool)
@@ -35,4 +37,5 @@ func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus
 	commentRouter.PUT("/:commentID/update", commentController.UpdateComment)
 	commentRouter.DELETE("/:commentID/delete", commentController.DeleteComment)
 	commentRouter.GET("/:commentID", commentController.GetComment)
+	commentRouter.GET("/user/me", middlewares.PaginationMiddleware(), commentController.ListMyComments)
 }

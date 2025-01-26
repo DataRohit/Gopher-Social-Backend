@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -429,5 +430,76 @@ func (cc *CommentController) GetComment(c *gin.Context) {
 	c.JSON(http.StatusOK, models.GetCommentSuccessResponse{
 		Message: "Comment Retrieved Successfully",
 		Comment: comment,
+	})
+}
+
+// ListMyComments godoc
+// @Summary List comments of logged in user for a post
+// @Description List comments of logged in user for a post. Requires authentication.
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Security BearerAuth
+// @Success 200 {object} models.ListMyCommentsSuccessResponse
+// @Failure 400 {object} models.ListMyCommentsErrorResponse
+// @Failure 401 {object} models.ListMyCommentsErrorResponse
+// @Failure 500 {object} models.ListMyCommentsErrorResponse
+// @Router /post/{postID}/comment/user/me [get]
+func (cc *CommentController) ListMyComments(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		cc.logger.Error("Post ID is required")
+		c.JSON(http.StatusBadRequest, models.ListMyCommentsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID is required path parameter",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.ListMyCommentsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	userCtx, exists := c.Get("user")
+	if !exists {
+		cc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListMyCommentsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	user, ok := userCtx.(*models.User)
+	if !ok {
+		cc.logger.Error("Invalid user type in context. Middleware misconfiguration.")
+		c.JSON(http.StatusInternalServerError, models.ListMyCommentsErrorResponse{
+			Message: "Server Error",
+			Error:   "internal server error",
+		})
+		return
+	}
+
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+	comments, err := cc.commentStore.ListCommentsByAuthorIDForPost(c.Request.Context(), user.ID, postID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to list comments from store")
+		c.JSON(http.StatusInternalServerError, models.ListMyCommentsErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to list comments",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListMyCommentsSuccessResponse{
+		Message:  "Comments Retrieved Successfully",
+		Comments: comments,
 	})
 }
