@@ -36,3 +36,13 @@ type ListTimedOutUsersErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Deactivate User Models
+type DeactivateUserSuccessResponse struct {
+	Message string `json:"message" example:"User Deactivated Successfully"`
+}
+
+type DeactivateUserErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

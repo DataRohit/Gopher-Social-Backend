@@ -34,6 +34,12 @@ var ErrAdminCannotTimeoutAdmin = errors.New("admin cannot timeout another admin"
 // ErrModeratorCannotTimeoutModeratorOrAdmin is returned when a moderator tries to timeout a moderator or admin.
 var ErrModeratorCannotTimeoutModeratorOrAdmin = errors.New("moderator can only timeout normal users")
 
+// ErrAdminCannotDeactivateAdmin is returned when an admin tries to deactivate another admin.
+var ErrAdminCannotDeactivateAdmin = errors.New("admin cannot deactivate another admin")
+
+// ErrModeratorCannotDeactivateModeratorOrAdmin is returned when a moderator tries to deactivate a moderator or admin.
+var ErrModeratorCannotDeactivateModeratorOrAdmin = errors.New("moderator can only deactivate normal users")
+
 // TimeoutUser applies a timeout to a user until the specified time.
 //
 // Parameters:
@@ -134,4 +140,27 @@ func (as *ActionStore) ListTimedOutUsers(ctx context.Context, pageNumber int, pa
 	}
 
 	return timedOutUsers, nil
+}
+
+// DeactivateUser deactivates a user by setting their is_active status to false.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - targetUserID (uuid.UUID): ID of the user to deactivate.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) DeactivateUser(ctx context.Context, targetUserID uuid.UUID) error {
+	commandTag, err := as.dbPool.Exec(ctx, `
+		UPDATE users
+		SET is_active = FALSE
+		WHERE id = $1
+	`, targetUserID)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate user: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+	return nil
 }

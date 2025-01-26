@@ -98,6 +98,19 @@ definitions:
       post:
         $ref: '#/definitions/models.Post'
     type: object
+  models.DeactivateUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.DeactivateUserSuccessResponse:
+    properties:
+      message:
+        example: User Deactivated Successfully
+        type: string
+    type: object
   models.DeleteCommentErrorResponse:
     properties:
       error:
@@ -1027,6 +1040,50 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /action/deactivate/{userID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deactivates a user, preventing them from accessing the platform.
+      parameters:
+      - description: User ID to deactivate
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deactivated user
+          schema:
+            $ref: '#/definitions/models.DeactivateUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.DeactivateUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DeactivateUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            be deactivated by requester
+          schema:
+            $ref: '#/definitions/models.DeactivateUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.DeactivateUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to deactivate user
+          schema:
+            $ref: '#/definitions/models.DeactivateUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Deactivate a user
+      tags:
+      - action
   /action/timeout:
     get:
       consumes:

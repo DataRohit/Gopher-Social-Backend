@@ -342,3 +342,114 @@ func (ac *ActionController) ListTimedOutUsers(c *gin.Context) {
 		Users:   timedOutUsers,
 	})
 }
+
+// DeactivateUser godoc
+// @Summary      Deactivate a user
+// @Description  Deactivates a user, preventing them from accessing the platform.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        userID path string true "User ID to deactivate"
+// @Success      200 {object} models.DeactivateUserSuccessResponse "Successfully deactivated user"
+// @Failure      400 {object} models.DeactivateUserErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.DeactivateUserErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.DeactivateUserErrorResponse "Forbidden - Insufficient permissions or target user cannot be deactivated by requester"
+// @Failure      404 {object} models.DeactivateUserErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.DeactivateUserErrorResponse "Internal Server Error - Failed to deactivate user"
+// @Router       /action/deactivate/{userID} [delete]
+func (ac *ActionController) DeactivateUser(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DeactivateUserErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	targetUserIDStr := c.Param("userID")
+	if targetUserIDStr == "" {
+		ac.logger.Error("Target User ID is required in path")
+		c.JSON(http.StatusBadRequest, models.DeactivateUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "target userID is required path parameter",
+		})
+		return
+	}
+
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": targetUserIDStr}).Error("Invalid Target User ID format")
+		c.JSON(http.StatusBadRequest, models.DeactivateUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid target userID format",
+		})
+		return
+	}
+
+	targetUser, err := ac.authStore.GetUserByID(c, targetUserID)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Target user not found")
+			c.JSON(http.StatusNotFound, models.DeactivateUserErrorResponse{
+				Message: "User Not Found",
+				Error:   "target user not found",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to get target user from store")
+			c.JSON(http.StatusInternalServerError, models.DeactivateUserErrorResponse{
+				Message: "Failed to Deactivate User",
+				Error:   "could not retrieve user details",
+			})
+		}
+		return
+	}
+
+	if requestingUser.Role.Level < 2 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.DeactivateUserErrorResponse{
+			Message: "Forbidden",
+			Error:   "insufficient permissions",
+		})
+		return
+	}
+
+	if requestingUser.Role.Level == 2 {
+		if targetUser.Role.Level > 1 {
+			ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level, "targetUserID": targetUserID, "targetUserRole": targetUser.Role.Level}).Error("Moderator cannot deactivate moderator or admin")
+			c.JSON(http.StatusForbidden, models.DeactivateUserErrorResponse{
+				Message: "Forbidden",
+				Error:   stores.ErrModeratorCannotDeactivateModeratorOrAdmin.Error(),
+			})
+			return
+		}
+	}
+
+	if requestingUser.Role.Level == 3 {
+		if targetUser.Role.Level == 3 {
+			ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level, "targetUserID": targetUserID, "targetUserRole": targetUser.Role.Level}).Error("Admin cannot deactivate another admin")
+			c.JSON(http.StatusForbidden, models.DeactivateUserErrorResponse{
+				Message: "Forbidden",
+				Error:   stores.ErrAdminCannotDeactivateAdmin.Error(),
+			})
+			return
+		}
+	}
+
+	err = ac.actionStore.DeactivateUser(c, targetUserID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to deactivate user in store")
+		c.JSON(http.StatusInternalServerError, models.DeactivateUserErrorResponse{
+			Message: "Failed to Deactivate User",
+			Error:   "could not deactivate user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DeactivateUserSuccessResponse{
+		Message: "User Deactivated Successfully",
+	})
+}

@@ -22,6 +22,73 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/deactivate/{userID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deactivates a user, preventing them from accessing the platform.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Deactivate a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to deactivate",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deactivated user",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions or target user cannot be deactivated by requester",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to deactivate user",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/action/timeout": {
             "get": {
                 "security": [
@@ -3271,6 +3338,26 @@ const docTemplate = `{
                 },
                 "post": {
                     "$ref": "#/definitions/models.Post"
+                }
+            }
+        },
+        "models.DeactivateUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeactivateUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Deactivated Successfully"
                 }
             }
         },
