@@ -609,6 +609,19 @@ definitions:
         example: Redis Unhealthy!
         type: string
     type: object
+  models.RemoveTimeoutUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.RemoveTimeoutUserSuccessResponse:
+    properties:
+      message:
+        example: User Timeout Removed Successfully
+        type: string
+    type: object
   models.ResendActivationLinkErrorResponse:
     properties:
       error:
@@ -679,6 +692,33 @@ definitions:
     properties:
       status:
         example: Router Healthy!
+        type: string
+    type: object
+  models.TimeoutUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.TimeoutUserPayload:
+    properties:
+      timeout_duration:
+        enum:
+        - 30m
+        - 1h
+        - 6h
+        - 12h
+        - 1d
+        example: 1h
+        type: string
+    required:
+    - timeout_duration
+    type: object
+  models.TimeoutUserSuccessResponse:
+    properties:
+      message:
+        example: User Timed Out Successfully
         type: string
     type: object
   models.UndislikeCommentErrorResponse:
@@ -967,6 +1007,100 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /action/timeout/{userID}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes an active timeout from a user, restoring their access.
+      parameters:
+      - description: User ID to remove timeout from
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully removed user timeout
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            have timeout removed by requester
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to remove user timeout
+          schema:
+            $ref: '#/definitions/models.RemoveTimeoutUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove timeout from a user
+      tags:
+      - action
+    post:
+      consumes:
+      - application/json
+      description: Applies a timeout to a user, restricting their access for a specified
+        duration.
+      parameters:
+      - description: User ID to timeout
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Request Body for timeout duration
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.TimeoutUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully timed out user
+          schema:
+            $ref: '#/definitions/models.TimeoutUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.TimeoutUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.TimeoutUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            be timed out by requester
+          schema:
+            $ref: '#/definitions/models.TimeoutUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.TimeoutUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to timeout user
+          schema:
+            $ref: '#/definitions/models.TimeoutUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Timeout a user
+      tags:
+      - action
   /auth/activate:
     get:
       description: Activates a user account using the activation token from the query

@@ -22,6 +22,147 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/timeout/{userID}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Applies a timeout to a user, restricting their access for a specified duration.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Timeout a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to timeout",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request Body for timeout duration",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully timed out user",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions or target user cannot be timed out by requester",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to timeout user",
+                        "schema": {
+                            "$ref": "#/definitions/models.TimeoutUserErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes an active timeout from a user, restoring their access.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Remove timeout from a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to remove timeout from",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully removed user timeout",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions or target user cannot have timeout removed by requester",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to remove user timeout",
+                        "schema": {
+                            "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/activate": {
             "get": {
                 "description": "Activates a user account using the activation token from the query parameter.",
@@ -3849,6 +3990,26 @@ const docTemplate = `{
                 }
             }
         },
+        "models.RemoveTimeoutUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.RemoveTimeoutUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Timeout Removed Successfully"
+                }
+            }
+        },
         "models.ResendActivationLinkErrorResponse": {
             "type": "object",
             "properties": {
@@ -3950,6 +4111,45 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Router Healthy!"
+                }
+            }
+        },
+        "models.TimeoutUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TimeoutUserPayload": {
+            "type": "object",
+            "required": [
+                "timeout_duration"
+            ],
+            "properties": {
+                "timeout_duration": {
+                    "type": "string",
+                    "enum": [
+                        "30m",
+                        "1h",
+                        "6h",
+                        "12h",
+                        "1d"
+                    ],
+                    "example": "1h"
+                }
+            }
+        },
+        "models.TimeoutUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Timed Out Successfully"
                 }
             }
         },
