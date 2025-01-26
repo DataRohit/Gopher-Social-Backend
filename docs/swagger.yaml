@@ -13,6 +13,50 @@ definitions:
         example: User Activated Successfully
         type: string
     type: object
+  models.Comment:
+    properties:
+      author:
+        $ref: '#/definitions/models.User'
+      content:
+        example: This is a comment content
+        type: string
+      created_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      post:
+        $ref: '#/definitions/models.Post'
+      updated_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
+    type: object
+  models.CreateCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.CreateCommentPayload:
+    properties:
+      content:
+        example: This is a comment content
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+    - content
+    type: object
+  models.CreateCommentSuccessResponse:
+    properties:
+      comment:
+        $ref: '#/definitions/models.Comment'
+      message:
+        example: Comment Created Successfully
+        type: string
+    type: object
   models.CreatePostErrorResponse:
     properties:
       error:
@@ -1113,6 +1157,47 @@ paths:
       summary: Update an existing post
       tags:
       - posts
+  /post/{postID}/comment/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment on a post. Requires authentication.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCommentPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateCommentSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new comment on a post
+      tags:
+      - Comments
   /post/{postID}/dislike:
     post:
       consumes:

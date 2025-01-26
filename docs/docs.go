@@ -1025,6 +1025,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new comment on a post. Requires authentication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Create a new comment on a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Comment payload",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCommentPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/dislike": {
             "post": {
                 "security": [
@@ -1878,6 +1942,70 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "User Activated Successfully"
+                }
+            }
+        },
+        "models.Comment": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "This is a comment content"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "post": {
+                    "$ref": "#/definitions/models.Post"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
+                }
+            }
+        },
+        "models.CreateCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateCommentPayload": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "example": "This is a comment content"
+                }
+            }
+        },
+        "models.CreateCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "$ref": "#/definitions/models.Comment"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Comment Created Successfully"
                 }
             }
         },
