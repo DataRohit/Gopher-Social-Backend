@@ -228,10 +228,29 @@ definitions:
           $ref: '#/definitions/models.Post'
         type: array
     type: object
+  models.ListUserPostsErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListUserPostsSuccessResponse:
+    properties:
+      message:
+        example: User Posts Retrieved Successfully
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+    type: object
   models.Post:
     properties:
       author:
-        $ref: '#/definitions/models.User'
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Removed from response as per requirement
       content:
         example: This is the main content of my post.
         type: string
@@ -1071,6 +1090,46 @@ paths:
       security:
       - BearerAuth: []
       summary: List posts of logged-in user
+      tags:
+      - posts
+  /post/user/{identifier}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts created by a user identified by username,
+        email, or user ID.
+      parameters:
+      - description: User Identifier (username, email, or user ID)
+        in: path
+        name: identifier
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of user's posts
+          schema:
+            $ref: '#/definitions/models.ListUserPostsSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListUserPostsErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListUserPostsErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.ListUserPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch user's posts
+          schema:
+            $ref: '#/definitions/models.ListUserPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List posts by user identifier
       tags:
       - posts
   /profile/{identifier}:

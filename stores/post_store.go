@@ -200,3 +200,30 @@ func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID
 
 	return posts, nil
 }
+
+// ListPostsByUserIDentifier retrieves all posts from the database for a given user identifier (username, email, or user ID).
+// It first fetches the user ID from the identifier using AuthStore and then retrieves posts for that author ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username, email, or user ID of the author whose posts are to be retrieved.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the user.
+//   - error: ErrUserNotFound if user is not found, or other errors during database query.
+func (ps *PostStore) ListPostsByUserIDentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
+	user, err := ps.authStore.GetUserByUsernameOrEmail(ctx, identifier)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by identifier: %w", err)
+	}
+
+	posts, err := ps.ListPostsByAuthorID(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list posts by author id: %w", err)
+	}
+
+	return posts, nil
+}

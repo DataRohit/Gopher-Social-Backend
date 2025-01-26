@@ -89,16 +89,20 @@ func (pc *PostController) CreatePost(c *gin.Context) {
 		return
 	}
 
-	author, err := pc.authStore.GetUserByID(c, createdPost.AuthorID)
-	if err != nil {
-		pc.logger.WithFields(logrus.Fields{"error": err, "postID": createdPost.ID, "authorID": createdPost.AuthorID}).Error("Failed to fetch author details")
-		c.JSON(http.StatusInternalServerError, models.CreatePostErrorResponse{
-			Message: "Failed to Create Post",
-			Error:   "could not fetch author details",
-		})
-		return
-	}
-	createdPost.Author = author
+	// Author information is not needed in the response as per requirement.
+	// If you need author info, uncomment below lines and update response models accordingly.
+	/*
+		author, err := pc.authStore.GetUserByID(c, createdPost.AuthorID)
+		if err != nil {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": createdPost.ID, "authorID": createdPost.AuthorID}).Error("Failed to fetch author details")
+			c.JSON(http.StatusInternalServerError, models.CreatePostErrorResponse{
+				Message: "Failed to Create Post",
+				Error:   "could not fetch author details",
+			})
+			return
+		}
+		createdPost.Author = author
+	*/
 
 	c.JSON(http.StatusCreated, models.CreatePostSuccessResponse{
 		Message: "Post Created Successfully",
@@ -209,16 +213,20 @@ func (pc *PostController) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	author, err := pc.authStore.GetUserByID(c, updatedPost.AuthorID)
-	if err != nil {
-		pc.logger.WithFields(logrus.Fields{"error": err, "postID": updatedPost.ID, "authorID": updatedPost.AuthorID}).Error("Failed to fetch author details after update")
-		c.JSON(http.StatusInternalServerError, models.UpdatePostErrorResponse{
-			Message: "Failed to Update Post",
-			Error:   "could not fetch author details after update",
-		})
-		return
-	}
-	updatedPost.Author = author
+	// Author information is not needed in the response as per requirement.
+	// If you need author info, uncomment below lines and update response models accordingly.
+	/*
+		author, err := pc.authStore.GetUserByID(c, updatedPost.AuthorID)
+		if err != nil {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": updatedPost.ID, "authorID": updatedPost.AuthorID}).Error("Failed to fetch author details after update")
+			c.JSON(http.StatusInternalServerError, models.UpdatePostErrorResponse{
+				Message: "Failed to Update Post",
+				Error:   "could not fetch author details after update",
+			})
+			return
+		}
+		updatedPost.Author = author
+	*/
 
 	c.JSON(http.StatusOK, models.UpdatePostSuccessResponse{
 		Message: "Post Updated Successfully",
@@ -377,16 +385,20 @@ func (pc *PostController) GetPost(c *gin.Context) {
 		return
 	}
 
-	author, err := pc.authStore.GetUserByID(c, retrievedPost.AuthorID)
-	if err != nil {
-		pc.logger.WithFields(logrus.Fields{"error": err, "postID": retrievedPost.ID, "authorID": retrievedPost.AuthorID}).Error("Failed to fetch author details")
-		c.JSON(http.StatusInternalServerError, models.GetPostErrorResponse{
-			Message: "Failed to Get Post",
-			Error:   "could not fetch author details",
-		})
-		return
-	}
-	retrievedPost.Author = author
+	// Author information is not needed in the response as per requirement.
+	// If you need author info, uncomment below lines and update response models accordingly.
+	/*
+		author, err := pc.authStore.GetUserByID(c, retrievedPost.AuthorID)
+		if err != nil {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": retrievedPost.ID, "authorID": retrievedPost.AuthorID}).Error("Failed to fetch author details")
+			c.JSON(http.StatusInternalServerError, models.GetPostErrorResponse{
+				Message: "Failed to Get Post",
+				Error:   "could not fetch author details",
+			})
+			return
+		}
+		retrievedPost.Author = author
+	*/
 
 	c.JSON(http.StatusOK, models.GetPostSuccessResponse{
 		Message: "Post Retrieved Successfully",
@@ -428,6 +440,65 @@ func (pc *PostController) ListMyPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, models.ListMyPostsSuccessResponse{
+		Message: "User Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}
+
+// ListPostsByUserIdentifier godoc
+// @Summary      List posts by user identifier
+// @Description  Retrieves a list of posts created by a user identified by username, email, or user ID.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        identifier path string true "User Identifier (username, email, or user ID)"
+// @Success      200 {object} models.ListUserPostsSuccessResponse "Successfully retrieved list of user's posts"
+// @Failure      400 {object} models.ListUserPostsErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ListUserPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.ListUserPostsErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.ListUserPostsErrorResponse "Internal Server Error - Failed to fetch user's posts"
+// @Router       /post/user/{identifier} [get]
+func (pc *PostController) ListPostsByUserIdentifier(c *gin.Context) {
+	_, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListUserPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	identifier := c.Param("identifier")
+	if identifier == "" {
+		pc.logger.Error("User Identifier is required in path")
+		c.JSON(http.StatusBadRequest, models.ListUserPostsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "user identifier is required in path",
+		})
+		return
+	}
+
+	posts, err := pc.postStore.ListPostsByUserIDentifier(c, identifier)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
+			c.JSON(http.StatusNotFound, models.ListUserPostsErrorResponse{
+				Message: "User Not Found",
+				Error:   "user not found",
+			})
+		} else {
+			pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get posts by user identifier from store")
+			c.JSON(http.StatusInternalServerError, models.ListUserPostsErrorResponse{
+				Message: "Failed to Get User Posts",
+				Error:   "could not retrieve posts from database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListUserPostsSuccessResponse{
 		Message: "User Posts Retrieved Successfully",
 		Posts:   posts,
 	})

@@ -537,6 +537,67 @@
                 }
             }
         },
+        "/post/user/{identifier}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts created by a user identified by username, email, or user ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "List posts by user identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of user's posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserPostsSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserPostsErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserPostsErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch user's posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListUserPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}": {
             "get": {
                 "security": [
@@ -1602,11 +1663,42 @@
                 }
             }
         },
+        "models.ListUserPostsErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListUserPostsSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Posts Retrieved Successfully"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Post"
+                    }
+                }
+            }
+        },
         "models.Post": {
             "type": "object",
             "properties": {
                 "author": {
-                    "$ref": "#/definitions/models.User"
+                    "description": "Removed from response as per requirement",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    ]
                 },
                 "content": {
                     "type": "string",

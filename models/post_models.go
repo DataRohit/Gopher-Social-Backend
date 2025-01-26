@@ -9,7 +9,7 @@ import (
 type Post struct {
 	ID          uuid.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	AuthorID    uuid.UUID `json:"-"`
-	Author      *User     `json:"author,omitempty"`
+	Author      *User     `json:"author,omitempty"` // Removed from response as per requirement
 	Title       string    `json:"title" example:"My Awesome Post"`
 	SubTitle    string    `json:"sub_title,omitempty" example:"A Catchy Subtitle"`
 	Description string    `json:"description,omitempty" example:"A brief description of the post."`
@@ -84,6 +84,17 @@ type ListMyPostsSuccessResponse struct {
 }
 
 type ListMyPostsErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// List User Posts Models
+type ListUserPostsSuccessResponse struct {
+	Message string  `json:"message" example:"User Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListUserPostsErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
