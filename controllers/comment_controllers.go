@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/datarohit/gopher-social-backend/models"
@@ -120,5 +121,134 @@ func (cc *CommentController) CreateComment(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.CreateCommentSuccessResponse{
 		Message: "Comment Created Successfully",
 		Comment: createdComment,
+	})
+}
+
+// UpdateComment godoc
+// @Summary Update an existing comment
+// @Description Update an existing comment. Requires authentication.
+// @Tags Comments
+// @Accept json
+// @Produce json
+// @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Param commentID path string true "Comment ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Param payload body models.UpdateCommentPayload true "Comment payload"
+// @Security BearerAuth
+// @Success 200 {object} models.UpdateCommentSuccessResponse
+// @Failure 400 {object} models.UpdateCommentErrorResponse
+// @Failure 401 {object} models.UpdateCommentErrorResponse
+// @Failure 403 {object} models.UpdateCommentErrorResponse
+// @Failure 404 {object} models.UpdateCommentErrorResponse
+// @Failure 500 {object} models.UpdateCommentErrorResponse
+// @Router /post/{postID}/comment/update/{commentID} [put]
+func (cc *CommentController) UpdateComment(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	commentIDStr := c.Param("commentID")
+
+	if postIDStr == "" || commentIDStr == "" {
+		cc.logger.Error("Post ID and Comment ID are required")
+		c.JSON(http.StatusBadRequest, models.UpdateCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and commentID are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.UpdateCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.UpdateCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid commentID format",
+		})
+		return
+	}
+
+	var req models.UpdateCommentPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Request Body for Comment Update")
+		c.JSON(http.StatusBadRequest, models.UpdateCommentErrorResponse{
+			Message: "Invalid Request Body",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	userCtx, exists := c.Get("user")
+	if !exists {
+		cc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.UpdateCommentErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	user, ok := userCtx.(*models.User)
+	if !ok {
+		cc.logger.Error("Invalid user type in context. Middleware misconfiguration.")
+		c.JSON(http.StatusInternalServerError, models.UpdateCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "internal server error",
+		})
+		return
+	}
+
+	existingComment, err := cc.commentStore.GetCommentByID(c.Request.Context(), commentID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			c.JSON(http.StatusNotFound, models.UpdateCommentErrorResponse{
+				Message: "Not Found",
+				Error:   "comment not found",
+			})
+			return
+		}
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to get comment from store")
+		c.JSON(http.StatusInternalServerError, models.UpdateCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to get comment",
+		})
+		return
+	}
+
+	if existingComment.AuthorID != user.ID {
+		cc.logger.Error("User is not the author of the comment.")
+		c.JSON(http.StatusForbidden, models.UpdateCommentErrorResponse{
+			Message: "Forbidden",
+			Error:   "user is not authorized to update this comment",
+		})
+		return
+	}
+
+	comment := &models.Comment{
+		ID:       commentID,
+		PostID:   postID,
+		AuthorID: user.ID,
+		Content:  req.Content,
+	}
+
+	updatedComment, err := cc.commentStore.UpdateComment(c.Request.Context(), comment)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to update comment in store")
+		c.JSON(http.StatusInternalServerError, models.UpdateCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to update comment",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.UpdateCommentSuccessResponse{
+		Message: "Comment Updated Successfully",
+		Comment: updatedComment,
 	})
 }

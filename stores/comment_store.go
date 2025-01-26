@@ -104,3 +104,31 @@ func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID)
 
 	return &comment, nil
 }
+
+// UpdateComment updates an existing comment in the database.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - comment (*models.Comment): Comment object with updated information. Comment ID must be populated.
+//
+// Returns:
+//   - *models.Comment: The updated comment if successful.
+//   - error: ErrCommentNotFound if comment not found or other errors during database query.
+func (cs *CommentStore) UpdateComment(ctx context.Context, comment *models.Comment) (*models.Comment, error) {
+	commandTag, err := cs.dbPool.Exec(ctx, `
+		UPDATE comments
+		SET
+			content = $2,
+			updated_at = NOW()
+		WHERE id = $1
+	`, comment.ID, comment.Content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update comment: %w", err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return nil, ErrCommentNotFound
+	}
+
+	return cs.GetCommentByID(ctx, comment.ID)
+}

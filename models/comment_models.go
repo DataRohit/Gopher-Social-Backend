@@ -31,3 +31,18 @@ type CreateCommentErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Update Comment Models
+type UpdateCommentPayload struct {
+	Content string `json:"content" binding:"required,min=1,max=500" example:"This is a updated comment content"`
+}
+
+type UpdateCommentSuccessResponse struct {
+	Message string   `json:"message" example:"Comment Updated Successfully"`
+	Comment *Comment `json:"comment"`
+}
+
+type UpdateCommentErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

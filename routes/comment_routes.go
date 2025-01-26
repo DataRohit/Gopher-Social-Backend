@@ -21,6 +21,7 @@ import (
 //
 // Routes:
 //   - POST /post/:postID/comment/create: Route to create a comment on a post. Requires authentication.
+//   - PUT /post/:postID/comment/update: Route to update a comment on a post. Requires authentication.
 func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	commentStore := stores.NewCommentStore(dbPool)
 	postStore := stores.NewPostStore(dbPool)
@@ -30,4 +31,5 @@ func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus
 	commentRouter := router.Group("/post/:postID/comment")
 	commentRouter.Use(middlewares.AuthMiddleware(logger))
 	commentRouter.POST("/create", commentController.CreateComment)
+	commentRouter.PUT("/update/:commentID", commentController.UpdateComment)
 }

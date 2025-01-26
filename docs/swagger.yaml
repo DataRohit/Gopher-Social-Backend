@@ -553,6 +553,31 @@ definitions:
         example: Post Unliked Successfully
         type: string
     type: object
+  models.UpdateCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UpdateCommentPayload:
+    properties:
+      content:
+        example: This is a updated comment content
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+    - content
+    type: object
+  models.UpdateCommentSuccessResponse:
+    properties:
+      comment:
+        $ref: '#/definitions/models.Comment'
+      message:
+        example: Comment Updated Successfully
+        type: string
+    type: object
   models.UpdatePostErrorResponse:
     properties:
       error:
@@ -1196,6 +1221,60 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a new comment on a post
+      tags:
+      - Comments
+  /post/{postID}/comment/update/{commentID}:
+    put:
+      consumes:
+      - application/json
+      description: Update an existing comment. Requires authentication.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: commentID
+        required: true
+        type: string
+      - description: Comment payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateCommentPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UpdateCommentSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.UpdateCommentErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.UpdateCommentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.UpdateCommentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.UpdateCommentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.UpdateCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an existing comment
       tags:
       - Comments
   /post/{postID}/dislike:
