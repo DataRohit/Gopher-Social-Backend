@@ -22,6 +22,61 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/action/timeout": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of users who are currently timed out. Accessible to moderators and admins.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "List timed out users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of timed out users",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListTimedOutUsersSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListTimedOutUsersErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListTimedOutUsersErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to list timed out users",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListTimedOutUsersErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/action/timeout/{userID}": {
             "post": {
                 "security": [
@@ -3810,6 +3865,32 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ListTimedOutUsersErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListTimedOutUsersSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Timed Out Users Retrieved Successfully"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                }
+            }
+        },
         "models.ListUserCommentsErrorResponse": {
             "type": "object",
             "properties": {
@@ -4098,6 +4179,10 @@ const docTemplate = `{
                 "description": {
                     "type": "string",
                     "example": "Normal User"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
                 },
                 "level": {
                     "type": "integer",

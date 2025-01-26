@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -80,4 +81,57 @@ func (as *ActionStore) RemoveTimeoutUser(ctx context.Context, targetUserID uuid.
 		return ErrUserNotFound
 	}
 	return nil
+}
+
+// ListTimedOutUsers retrieves a list of users who are currently timed out.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
+//
+// Returns:
+//   - []*models.User: A slice of User pointers, or nil if no users are timed out.
+//   - error: An error if the database query fails.
+func (as *ActionStore) ListTimedOutUsers(ctx context.Context, pageNumber int, pageSize int) ([]*models.User, error) {
+	offset := (pageNumber - 1) * pageSize
+	rows, err := as.dbPool.Query(ctx, `
+		SELECT
+			u.id, u.username, u.email, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.id as role_id, r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.timeout_until > NOW()
+		ORDER BY u.timeout_until ASC
+		LIMIT $1 OFFSET $2
+	`, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list timed out users: %w", err)
+	}
+	defer rows.Close()
+
+	var timedOutUsers []*models.User
+	for rows.Next() {
+		timedOutUser := &models.User{Role: &models.Role{}}
+		var timeoutUntil time.Time
+
+		err := rows.Scan(
+			&timedOutUser.ID, &timedOutUser.Username, &timedOutUser.Email, &timeoutUntil, &timedOutUser.Banned, &timedOutUser.IsActive, &timedOutUser.CreatedAt, &timedOutUser.UpdatedAt,
+			&timedOutUser.Role.ID, &timedOutUser.Role.Level, &timedOutUser.Role.Description,
+			&timedOutUser.Followers, &timedOutUser.Following,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan timed out user row: %w", err)
+		}
+		timedOutUser.TimeoutUntil = &timeoutUntil
+		timedOutUsers = append(timedOutUsers, timedOutUser)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during timed out users rows iteration: %w", err)
+	}
+
+	return timedOutUsers, nil
 }

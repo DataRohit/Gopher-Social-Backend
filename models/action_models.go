@@ -25,3 +25,14 @@ type RemoveTimeoutUserErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List Timed Out Users Models
+type ListTimedOutUsersSuccessResponse struct {
+	Message string  `json:"message" example:"Timed Out Users Retrieved Successfully"`
+	Users   []*User `json:"users"`
+}
+
+type ListTimedOutUsersErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

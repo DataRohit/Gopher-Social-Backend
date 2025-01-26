@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -287,5 +288,57 @@ func (ac *ActionController) RemoveTimeoutUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.RemoveTimeoutUserSuccessResponse{
 		Message: "User Timeout Removed Successfully",
+	})
+}
+
+// ListTimedOutUsers godoc
+// @Summary      List timed out users
+// @Description  Retrieves a list of users who are currently timed out. Accessible to moderators and admins.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page query integer false "Page number for pagination" default(1)
+// @Success      200 {object} models.ListTimedOutUsersSuccessResponse "Successfully retrieved list of timed out users"
+// @Failure      401 {object} models.ListTimedOutUsersErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.ListTimedOutUsersErrorResponse "Forbidden - Insufficient permissions"
+// @Failure      500 {object} models.ListTimedOutUsersErrorResponse "Internal Server Error - Failed to list timed out users"
+// @Router       /action/timeout [get]
+func (ac *ActionController) ListTimedOutUsers(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListTimedOutUsersErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	if requestingUser.Role.Level < 2 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.ListTimedOutUsersErrorResponse{
+			Message: "Forbidden",
+			Error:   "insufficient permissions",
+		})
+		return
+	}
+
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+
+	timedOutUsers, err := ac.actionStore.ListTimedOutUsers(c, pageNumber, middlewares.PageSize)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "requestingUserID": requestingUser.ID}).Error("Failed to list timed out users from store")
+		c.JSON(http.StatusInternalServerError, models.ListTimedOutUsersErrorResponse{
+			Message: "Failed to List Timed Out Users",
+			Error:   "could not retrieve timed out users from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListTimedOutUsersSuccessResponse{
+		Message: "Timed Out Users Retrieved Successfully",
+		Users:   timedOutUsers,
 	})
 }

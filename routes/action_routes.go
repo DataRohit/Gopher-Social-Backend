@@ -22,6 +22,7 @@ import (
 // Routes:
 //   - POST /action/timeout/:userID: Route to timeout a user. Requires moderator or admin role.
 //   - DELETE /action/timeout/:userID: Route to remove timeout from a user. Requires moderator or admin role.
+//   - GET /action/timeout: Route to list all timed out users. Requires moderator or admin role.
 func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	actionStore := stores.NewActionStore(dbPool)
@@ -31,4 +32,5 @@ func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.
 	actionRouter.Use(middlewares.AuthMiddleware(logger))
 	actionRouter.POST("/timeout/:userID", actionController.TimeoutUser)
 	actionRouter.DELETE("/timeout/:userID", actionController.RemoveTimeoutUser)
+	actionRouter.GET("/timeout", middlewares.PaginationMiddleware(), actionController.ListTimedOutUsers)
 }

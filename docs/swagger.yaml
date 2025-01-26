@@ -484,6 +484,23 @@ definitions:
           $ref: '#/definitions/models.Post'
         type: array
     type: object
+  models.ListTimedOutUsersErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListTimedOutUsersSuccessResponse:
+    properties:
+      message:
+        example: Timed Out Users Retrieved Successfully
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+    type: object
   models.ListUserCommentsErrorResponse:
     properties:
       error:
@@ -683,6 +700,9 @@ definitions:
     properties:
       description:
         example: Normal User
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
         type: string
       level:
         example: 1
@@ -1007,6 +1027,42 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /action/timeout:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of users who are currently timed out. Accessible
+        to moderators and admins.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of timed out users
+          schema:
+            $ref: '#/definitions/models.ListTimedOutUsersSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListTimedOutUsersErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            $ref: '#/definitions/models.ListTimedOutUsersErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to list timed out users
+          schema:
+            $ref: '#/definitions/models.ListTimedOutUsersErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List timed out users
+      tags:
+      - action
   /action/timeout/{userID}:
     delete:
       consumes:
