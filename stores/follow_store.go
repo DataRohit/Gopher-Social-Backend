@@ -91,3 +91,97 @@ func (fs *FollowStore) UnfollowUser(ctx context.Context, followerID uuid.UUID, f
 	}
 	return nil
 }
+
+// GetFollowersByUserID retrieves all followers of a user, excluding banned users and includes follower/following counts.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - followeeID (uuid.UUID): ID of the user to get followers for.
+//
+// Returns:
+//   - []*models.User: List of users following the user (followee) with follower and following counts.
+//   - error: An error if fetching followers fails.
+func (fs *FollowStore) GetFollowersByUserID(ctx context.Context, followeeID uuid.UUID) ([]*models.User, error) {
+	rows, err := fs.dbPool.Query(ctx, `
+		SELECT
+			u.id, u.username, u.email, u.role_id, u.timeout_until, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM follows f
+		INNER JOIN users u ON f.follower_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE f.followee_id = $1 AND u.banned = FALSE AND u.is_active = TRUE
+	`, followeeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get followers: %w", err)
+	}
+	defer rows.Close()
+
+	var followers []*models.User
+	for rows.Next() {
+		user := &models.User{Role: &models.Role{}}
+		err := rows.Scan(
+			&user.ID, &user.Username, &user.Email, &user.RoleID, &user.TimeoutUntil, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.Role.Level, &user.Role.Description,
+			&user.Followers, &user.Following,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan follower row: %w", err)
+		}
+		followers = append(followers, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during followers rows iteration: %w", err)
+	}
+
+	return followers, nil
+}
+
+// GetFollowingByUserID retrieves all users being followed by a user, excluding banned users and includes follower/following counts.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - followerID (uuid.UUID): ID of the user to get following users for.
+//
+// Returns:
+//   - []*models.User: List of users being followed by the user (follower) with follower and following counts.
+//   - error: An error if fetching following users fails.
+func (fs *FollowStore) GetFollowingByUserID(ctx context.Context, followerID uuid.UUID) ([]*models.User, error) {
+	rows, err := fs.dbPool.Query(ctx, `
+		SELECT
+			u.id, u.username, u.email, u.role_id, u.timeout_until, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM follows f
+		INNER JOIN users u ON f.followee_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE f.follower_id = $1 AND u.banned = FALSE AND u.is_active = TRUE
+	`, followerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get following users: %w", err)
+	}
+	defer rows.Close()
+
+	var following []*models.User
+	for rows.Next() {
+		user := &models.User{Role: &models.Role{}}
+		err := rows.Scan(
+			&user.ID, &user.Username, &user.Email, &user.RoleID, &user.TimeoutUntil, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.Role.Level, &user.Role.Description,
+			&user.Followers, &user.Following,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan following user row: %w", err)
+		}
+		following = append(following, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during following users rows iteration: %w", err)
+	}
+
+	return following, nil
+}

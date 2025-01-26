@@ -689,6 +689,86 @@
                 }
             }
         },
+        "/user/followers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of users who are following the logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Get followers of logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved followers list",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowersSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowersErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch followers",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowersErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/following": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of users that the logged-in user is following.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Get users being followed by logged-in user",
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved following list",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowingSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowingErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch following users",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFollowingErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/unfollow/{identifier}": {
             "delete": {
                 "security": [
@@ -751,6 +831,128 @@
                         "description": "Internal Server Error - Failed to unfollow user",
                         "schema": {
                             "$ref": "#/definitions/models.UnfollowUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{identifier}/followers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of users who are following the user identified by identifier.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Get followers of a user by identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the user",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved followers list for user",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowersSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowersErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowersErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowersErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch followers",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowersErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{identifier}/following": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of users that the user identified by identifier is following.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "follow"
+                ],
+                "summary": "Get users being followed by a user by identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the user",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved following list for user",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowingSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowingErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowingErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowingErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch following users",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserFollowingErrorResponse"
                         }
                     }
                 }
@@ -834,6 +1036,58 @@
                 }
             }
         },
+        "models.GetFollowersErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetFollowersSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "followers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Followers Retrieved Successfully"
+                }
+            }
+        },
+        "models.GetFollowingErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetFollowingSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "following": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Following Users Retrieved Successfully"
+                }
+            }
+        },
         "models.GetLoggedInUserProfileErrorResponse": {
             "type": "object",
             "properties": {
@@ -854,6 +1108,58 @@
                 },
                 "profile": {
                     "$ref": "#/definitions/models.Profile"
+                }
+            }
+        },
+        "models.GetUserFollowersErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetUserFollowersSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "followers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "User Followers Retrieved Successfully"
+                }
+            }
+        },
+        "models.GetUserFollowingErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetUserFollowingSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "following": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.User"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "User Following Users Retrieved Successfully"
                 }
             }
         },

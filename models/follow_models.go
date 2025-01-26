@@ -33,3 +33,47 @@ type UnfollowUserErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Get Followers Models
+type GetFollowersSuccessResponse struct {
+	Message   string  `json:"message" example:"Followers Retrieved Successfully"`
+	Followers []*User `json:"followers"`
+}
+
+type GetFollowersErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// Get Following Models
+type GetFollowingSuccessResponse struct {
+	Message   string  `json:"message" example:"Following Users Retrieved Successfully"`
+	Following []*User `json:"following"`
+}
+
+type GetFollowingErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// Get User Followers Models
+type GetUserFollowersSuccessResponse struct {
+	Message   string  `json:"message" example:"User Followers Retrieved Successfully"`
+	Followers []*User `json:"followers"`
+}
+
+type GetUserFollowersErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// Get User Following Models
+type GetUserFollowingSuccessResponse struct {
+	Message   string  `json:"message" example:"User Following Users Retrieved Successfully"`
+	Following []*User `json:"following"`
+}
+
+type GetUserFollowingErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
