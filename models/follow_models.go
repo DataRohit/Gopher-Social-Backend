@@ -15,10 +15,6 @@ type Follow struct {
 }
 
 // Follow User Models
-type FollowUserPayload struct {
-	Identifier string `json:"identifier" binding:"required" example:"john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"`
-}
-
 type FollowUserSuccessResponse struct {
 	Message string `json:"message" example:"User Followed Successfully"`
 }
@@ -29,10 +25,6 @@ type FollowUserErrorResponse struct {
 }
 
 // Unfollow User Models
-type UnfollowUserPayload struct {
-	Identifier string `json:"identifier" binding:"required" example:"john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"`
-}
-
 type UnfollowUserSuccessResponse struct {
 	Message string `json:"message" example:"User Unfollowed Successfully"`
 }

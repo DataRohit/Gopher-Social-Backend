@@ -616,7 +616,7 @@
                 }
             }
         },
-        "/user/follow": {
+        "/user/follow/{identifier}": {
             "post": {
                 "security": [
                     {
@@ -636,13 +636,11 @@
                 "summary": "Follow a user",
                 "parameters": [
                     {
-                        "description": "Request Body for Follow User",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.FollowUserPayload"
-                        }
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the followee",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -691,7 +689,7 @@
                 }
             }
         },
-        "/user/unfollow": {
+        "/user/unfollow/{identifier}": {
             "delete": {
                 "security": [
                     {
@@ -711,13 +709,11 @@
                 "summary": "Unfollow a user",
                 "parameters": [
                     {
-                        "description": "Request Body for Unfollow User",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.UnfollowUserPayload"
-                        }
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the followee",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -790,18 +786,6 @@
                 },
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "models.FollowUserPayload": {
-            "type": "object",
-            "required": [
-                "identifier"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -1092,18 +1076,6 @@
                 },
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "models.UnfollowUserPayload": {
-            "type": "object",
-            "required": [
-                "identifier"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },

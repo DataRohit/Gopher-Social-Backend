@@ -20,14 +20,6 @@ definitions:
       message:
         type: string
     type: object
-  models.FollowUserPayload:
-    properties:
-      identifier:
-        example: john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000
-        type: string
-    required:
-    - identifier
-    type: object
   models.FollowUserSuccessResponse:
     properties:
       message:
@@ -225,14 +217,6 @@ definitions:
         type: string
       message:
         type: string
-    type: object
-  models.UnfollowUserPayload:
-    properties:
-      identifier:
-        example: john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000
-        type: string
-    required:
-    - identifier
     type: object
   models.UnfollowUserSuccessResponse:
     properties:
@@ -804,18 +788,17 @@ paths:
       summary: Update user profile
       tags:
       - profile
-  /user/follow:
+  /user/follow/{identifier}:
     post:
       consumes:
       - application/json
       description: Allows a logged-in user to follow another user.
       parameters:
-      - description: Request Body for Follow User
-        in: body
-        name: body
+      - description: User Identifier (username, email, or user ID) of the followee
+        in: path
+        name: identifier
         required: true
-        schema:
-          $ref: '#/definitions/models.FollowUserPayload'
+        type: string
       produces:
       - application/json
       responses:
@@ -852,18 +835,17 @@ paths:
       summary: Follow a user
       tags:
       - follow
-  /user/unfollow:
+  /user/unfollow/{identifier}:
     delete:
       consumes:
       - application/json
       description: Allows a logged-in user to unfollow another user.
       parameters:
-      - description: Request Body for Unfollow User
-        in: body
-        name: body
+      - description: User Identifier (username, email, or user ID) of the followee
+        in: path
+        name: identifier
         required: true
-        schema:
-          $ref: '#/definitions/models.UnfollowUserPayload'
+        type: string
       produces:
       - application/json
       responses:

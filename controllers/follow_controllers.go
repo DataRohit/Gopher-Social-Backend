@@ -45,7 +45,7 @@ func NewFollowController(authStore *stores.AuthStore, profileStore *stores.Profi
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        body body models.FollowUserPayload true "Request Body for Follow User"
+// @Param        identifier path string true "User Identifier (username, email, or user ID) of the followee"
 // @Success      200 {object} models.FollowUserSuccessResponse "Successfully followed user"
 // @Failure      400 {object} models.FollowUserErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.FollowUserErrorResponse "Unauthorized - User not logged in or invalid token"
@@ -53,7 +53,7 @@ func NewFollowController(authStore *stores.AuthStore, profileStore *stores.Profi
 // @Failure      404 {object} models.FollowUserErrorResponse "Not Found - Followee user not found"
 // @Failure      409 {object} models.FollowUserErrorResponse "Conflict - Already following user"
 // @Failure      500 {object} models.FollowUserErrorResponse "Internal Server Error - Failed to follow user"
-// @Router       /user/follow [post]
+// @Router       /user/follow/{identifier} [post]
 func (fc *FollowController) FollowUser(c *gin.Context) {
 	followerUser, exists := c.Get("user")
 	if !exists {
@@ -66,40 +66,31 @@ func (fc *FollowController) FollowUser(c *gin.Context) {
 	}
 	followerUserModel := followerUser.(*models.User)
 
-	var req models.FollowUserPayload
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID}).Error("Invalid Request Body for Follow User")
-		c.JSON(http.StatusBadRequest, models.FollowUserErrorResponse{
-			Message: "Invalid Request Body",
-			Error:   err.Error(),
-		})
-		return
-	}
-
-	if req.Identifier == "" {
+	identifier := c.Param("identifier")
+	if identifier == "" {
 		fc.logger.WithFields(logrus.Fields{"followerUserID": followerUserModel.ID}).Error("Followee Identifier is required")
 		c.JSON(http.StatusBadRequest, models.FollowUserErrorResponse{
 			Message: "Invalid Request",
-			Error:   "followee identifier is required",
+			Error:   "followee identifier is required in path",
 		})
 		return
 	}
 
 	var followeeUserID uuid.UUID
-	parsedUUID, err := uuid.Parse(req.Identifier)
+	parsedUUID, err := uuid.Parse(identifier)
 	if err == nil {
 		followeeUserID = parsedUUID
 	} else {
 		followeeUser, err := fc.profileStore.GetProfileByUserID(context.Background(), followerUserModel.ID)
 		if err == nil {
-			if req.Identifier == followeeUser.User.Username || req.Identifier == followeeUser.User.Email {
+			if identifier == followeeUser.User.Username || identifier == followeeUser.User.Email {
 				followeeUserID = followeeUser.User.ID
 			}
 		}
 		if followeeUserID == uuid.Nil {
-			followeeUserFromAuth, err := fc.authStore.GetUserByUsernameOrEmail(context.Background(), req.Identifier)
+			followeeUserFromAuth, err := fc.authStore.GetUserByUsernameOrEmail(context.Background(), identifier)
 			if err != nil {
-				fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID, "identifier": req.Identifier}).Error("Followee User Not Found")
+				fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID, "identifier": identifier}).Error("Followee User Not Found")
 				c.JSON(http.StatusNotFound, models.FollowUserErrorResponse{
 					Message: "Follow User Failed",
 					Error:   "followee user not found",
@@ -149,14 +140,14 @@ func (fc *FollowController) FollowUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        body body models.UnfollowUserPayload true "Request Body for Unfollow User"
+// @Param        identifier path string true "User Identifier (username, email, or user ID) of the followee"
 // @Success      200 {object} models.UnfollowUserSuccessResponse "Successfully unfollowed user"
 // @Failure      400 {object} models.UnfollowUserErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.UnfollowUserErrorResponse "Unauthorized - User not logged in or invalid token"
 // @Failure      403 {object} models.UnfollowUserErrorResponse "Forbidden - User account is inactive or banned"
 // @Failure      404 {object} models.UnfollowUserErrorResponse "Not Found - Followee user not found or not following"
 // @Failure      500 {object} models.UnfollowUserErrorResponse "Internal Server Error - Failed to unfollow user"
-// @Router       /user/unfollow [delete]
+// @Router       /user/unfollow/{identifier} [delete]
 func (fc *FollowController) UnfollowUser(c *gin.Context) {
 	followerUser, exists := c.Get("user")
 	if !exists {
@@ -169,40 +160,31 @@ func (fc *FollowController) UnfollowUser(c *gin.Context) {
 	}
 	followerUserModel := followerUser.(*models.User)
 
-	var req models.UnfollowUserPayload
-	if err := c.ShouldBindJSON(&req); err != nil {
-		fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID}).Error("Invalid Request Body for Unfollow User")
-		c.JSON(http.StatusBadRequest, models.UnfollowUserErrorResponse{
-			Message: "Invalid Request Body",
-			Error:   err.Error(),
-		})
-		return
-	}
-
-	if req.Identifier == "" {
+	identifier := c.Param("identifier")
+	if identifier == "" {
 		fc.logger.WithFields(logrus.Fields{"followerUserID": followerUserModel.ID}).Error("Followee Identifier is required")
 		c.JSON(http.StatusBadRequest, models.UnfollowUserErrorResponse{
 			Message: "Invalid Request",
-			Error:   "followee identifier is required",
+			Error:   "followee identifier is required in path",
 		})
 		return
 	}
 
 	var followeeUserID uuid.UUID
-	parsedUUID, err := uuid.Parse(req.Identifier)
+	parsedUUID, err := uuid.Parse(identifier)
 	if err == nil {
 		followeeUserID = parsedUUID
 	} else {
 		followeeUser, err := fc.profileStore.GetProfileByUserID(context.Background(), followerUserModel.ID)
 		if err == nil {
-			if req.Identifier == followeeUser.User.Username || req.Identifier == followeeUser.User.Email {
+			if identifier == followeeUser.User.Username || identifier == followeeUser.User.Email {
 				followeeUserID = followeeUser.User.ID
 			}
 		}
 		if followeeUserID == uuid.Nil {
-			followeeUserFromAuth, err := fc.authStore.GetUserByUsernameOrEmail(context.Background(), req.Identifier)
+			followeeUserFromAuth, err := fc.authStore.GetUserByUsernameOrEmail(context.Background(), identifier)
 			if err != nil {
-				fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID, "identifier": req.Identifier}).Error("Followee User Not Found")
+				fc.logger.WithFields(logrus.Fields{"error": err, "followerUserID": followerUserModel.ID, "identifier": identifier}).Error("Followee User Not Found")
 				c.JSON(http.StatusNotFound, models.UnfollowUserErrorResponse{
 					Message: "Unfollow User Failed",
 					Error:   "followee user not found",

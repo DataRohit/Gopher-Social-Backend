@@ -20,8 +20,8 @@ import (
 //   - None
 //
 // Routes:
-//   - POST /user/follow: Route to follow a user. Requires authentication.
-//   - DELETE /user/unfollow: Route to unfollow a user. Requires authentication.
+//   - POST /user/follow/:identifier: Route to follow a user. Requires authentication.
+//   - DELETE /user/unfollow/:identifier: Route to unfollow a user. Requires authentication.
 func FollowRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	profileStore := stores.NewProfileStore(dbPool)
@@ -30,6 +30,6 @@ func FollowRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.
 
 	followRouter := router.Group("/user")
 	followRouter.Use(middlewares.AuthMiddleware(logger))
-	followRouter.POST("/follow", followController.FollowUser)
-	followRouter.DELETE("/unfollow", followController.UnfollowUser)
+	followRouter.POST("/follow/:identifier", followController.FollowUser)
+	followRouter.DELETE("/unfollow/:identifier", followController.UnfollowUser)
 }

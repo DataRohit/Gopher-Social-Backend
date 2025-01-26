@@ -622,7 +622,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/follow": {
+        "/user/follow/{identifier}": {
             "post": {
                 "security": [
                     {
@@ -642,13 +642,11 @@ const docTemplate = `{
                 "summary": "Follow a user",
                 "parameters": [
                     {
-                        "description": "Request Body for Follow User",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.FollowUserPayload"
-                        }
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the followee",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -697,7 +695,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/unfollow": {
+        "/user/unfollow/{identifier}": {
             "delete": {
                 "security": [
                     {
@@ -717,13 +715,11 @@ const docTemplate = `{
                 "summary": "Unfollow a user",
                 "parameters": [
                     {
-                        "description": "Request Body for Unfollow User",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.UnfollowUserPayload"
-                        }
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID) of the followee",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -796,18 +792,6 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "models.FollowUserPayload": {
-            "type": "object",
-            "required": [
-                "identifier"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
@@ -1098,18 +1082,6 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
-                }
-            }
-        },
-        "models.UnfollowUserPayload": {
-            "type": "object",
-            "required": [
-                "identifier"
-            ],
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "example": "john_doe / john.doe@example.com / 550e8400-e29b-41d4-a716-446655440000"
                 }
             }
         },
