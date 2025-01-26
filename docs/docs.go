@@ -577,6 +577,65 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes an existing post by its ID. Only the author can delete the post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Delete an existing post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID to be deleted",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostSuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User is not the author or account is inactive/banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to delete post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/profile/me": {
@@ -1172,6 +1231,26 @@ const docTemplate = `{
                 },
                 "post": {
                     "$ref": "#/definitions/models.Post"
+                }
+            }
+        },
+        "models.DeletePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeletePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Deleted Successfully"
                 }
             }
         },

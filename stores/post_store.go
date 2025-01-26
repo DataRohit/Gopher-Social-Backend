@@ -135,3 +135,27 @@ func (ps *PostStore) UpdatePost(ctx context.Context, post *models.Post) (*models
 
 	return &updatedPost, nil
 }
+
+// DeletePost deletes an existing post from the database by its ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post to be deleted.
+//
+// Returns:
+//   - error: An error if deleting the post fails or if the post is not found.
+func (ps *PostStore) DeletePost(ctx context.Context, postID uuid.UUID) error {
+	commandTag, err := ps.dbPool.Exec(ctx, `
+		DELETE FROM posts
+		WHERE id = $1
+	`, postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return ErrPostNotFound
+	}
+
+	return nil
+}

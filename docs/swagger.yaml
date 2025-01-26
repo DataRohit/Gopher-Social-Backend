@@ -48,6 +48,19 @@ definitions:
       post:
         $ref: '#/definitions/models.Post'
     type: object
+  models.DeletePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.DeletePostSuccessResponse:
+    properties:
+      message:
+        example: Post Deleted Successfully
+        type: string
+    type: object
   models.FollowUserErrorResponse:
     properties:
       error:
@@ -836,6 +849,45 @@ paths:
       tags:
       - health
   /post/{postID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an existing post by its ID. Only the author can delete
+        the post.
+      parameters:
+      - description: Post ID to be deleted
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted post
+          schema:
+            $ref: '#/definitions/models.DeletePostSuccessResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "403":
+          description: Forbidden - User is not the author or account is inactive/banned
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to delete post
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete an existing post
+      tags:
+      - posts
     put:
       consumes:
       - application/json

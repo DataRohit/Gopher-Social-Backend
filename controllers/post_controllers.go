@@ -225,3 +225,91 @@ func (pc *PostController) UpdatePost(c *gin.Context) {
 		Post:    updatedPost,
 	})
 }
+
+// DeletePost godoc
+// @Summary      Delete an existing post
+// @Description  Deletes an existing post by its ID. Only the author can delete the post.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post ID to be deleted"
+// @Success      200 {object} models.DeletePostSuccessResponse "Successfully deleted post"
+// @Failure      401 {object} models.DeletePostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.DeletePostErrorResponse "Forbidden - User is not the author or account is inactive/banned"
+// @Failure      404 {object} models.DeletePostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.DeletePostErrorResponse "Internal Server Error - Failed to delete post"
+// @Router       /post/{postID} [delete]
+func (pc *PostController) DeletePost(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DeletePostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := user.(*models.User)
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		pc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.DeletePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "post ID is required in path",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.DeletePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	existingPost, err := pc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.DeletePostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.DeletePostErrorResponse{
+				Message: "Failed to Delete Post",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	if existingPost.AuthorID != userModel.ID {
+		pc.logger.WithFields(logrus.Fields{"postID": postID, "userID": userModel.ID, "authorID": existingPost.AuthorID}).Error("User is not the author of the post")
+		c.JSON(http.StatusForbidden, models.DeletePostErrorResponse{
+			Message: "Forbidden",
+			Error:   "you are not the author of this post",
+		})
+		return
+	}
+
+	err = pc.postStore.DeletePost(c, postID)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to delete post from store")
+		c.JSON(http.StatusInternalServerError, models.DeletePostErrorResponse{
+			Message: "Failed to Delete Post",
+			Error:   "could not delete post from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DeletePostSuccessResponse{
+		Message: "Post Deleted Successfully",
+	})
+}
