@@ -359,6 +359,36 @@ definitions:
         example: User Unfollowed Successfully
         type: string
     type: object
+  models.UpdatePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UpdatePostPayload:
+    properties:
+      content:
+        example: Updated main content of my post.
+        type: string
+      description:
+        example: Updated brief description of the post.
+        type: string
+      sub_title:
+        example: Updated Catchy Subtitle
+        type: string
+      title:
+        example: Updated Awesome Post
+        type: string
+    type: object
+  models.UpdatePostSuccessResponse:
+    properties:
+      message:
+        example: Post Updated Successfully
+        type: string
+      post:
+        $ref: '#/definitions/models.Post'
+    type: object
   models.UpdateProfileErrorResponse:
     properties:
       error:
@@ -805,6 +835,56 @@ paths:
       summary: Router Health Check
       tags:
       - health
+  /post/{postID}:
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing post by its ID. Only the author can update
+        the post.
+      parameters:
+      - description: Post ID to be updated
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Request Body for updating a post
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdatePostPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully updated post
+          schema:
+            $ref: '#/definitions/models.UpdatePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UpdatePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UpdatePostErrorResponse'
+        "403":
+          description: Forbidden - User is not the author or account is inactive/banned
+          schema:
+            $ref: '#/definitions/models.UpdatePostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.UpdatePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to update post
+          schema:
+            $ref: '#/definitions/models.UpdatePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update an existing post
+      tags:
+      - posts
   /post/create:
     post:
       consumes:

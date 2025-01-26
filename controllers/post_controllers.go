@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -101,5 +103,125 @@ func (pc *PostController) CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, models.CreatePostSuccessResponse{
 		Message: "Post Created Successfully",
 		Post:    createdPost,
+	})
+}
+
+// UpdatePost godoc
+// @Summary      Update an existing post
+// @Description  Updates an existing post by its ID. Only the author can update the post.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post ID to be updated"
+// @Param        body body models.UpdatePostPayload true "Request Body for updating a post"
+// @Success      200 {object} models.UpdatePostSuccessResponse "Successfully updated post"
+// @Failure      400 {object} models.UpdatePostErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.UpdatePostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.UpdatePostErrorResponse "Forbidden - User is not the author or account is inactive/banned"
+// @Failure      404 {object} models.UpdatePostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.UpdatePostErrorResponse "Internal Server Error - Failed to update post"
+// @Router       /post/{postID} [put]
+func (pc *PostController) UpdatePost(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.UpdatePostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := user.(*models.User)
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		pc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.UpdatePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "post ID is required in path",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.UpdatePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	var req models.UpdatePostPayload
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Invalid request body for updating post")
+		c.JSON(http.StatusBadRequest, models.UpdatePostErrorResponse{
+			Message: "Invalid Request Body",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	existingPost, err := pc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.UpdatePostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.UpdatePostErrorResponse{
+				Message: "Failed to Update Post",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	if existingPost.AuthorID != userModel.ID {
+		pc.logger.WithFields(logrus.Fields{"postID": postID, "userID": userModel.ID, "authorID": existingPost.AuthorID}).Error("User is not the author of the post")
+		c.JSON(http.StatusForbidden, models.UpdatePostErrorResponse{
+			Message: "Forbidden",
+			Error:   "you are not the author of this post",
+		})
+		return
+	}
+
+	post := &models.Post{
+		ID:          postID,
+		Title:       req.Title,
+		SubTitle:    req.SubTitle,
+		Description: req.Description,
+		Content:     req.Content,
+	}
+
+	updatedPost, err := pc.postStore.UpdatePost(c, post)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to update post in store")
+		c.JSON(http.StatusInternalServerError, models.UpdatePostErrorResponse{
+			Message: "Failed to Update Post",
+			Error:   "could not update post in database",
+		})
+		return
+	}
+
+	author, err := pc.authStore.GetUserByID(c, updatedPost.AuthorID)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": updatedPost.ID, "authorID": updatedPost.AuthorID}).Error("Failed to fetch author details after update")
+		c.JSON(http.StatusInternalServerError, models.UpdatePostErrorResponse{
+			Message: "Failed to Update Post",
+			Error:   "could not fetch author details after update",
+		})
+		return
+	}
+	updatedPost.Author = author
+
+	c.JSON(http.StatusOK, models.UpdatePostSuccessResponse{
+		Message: "Post Updated Successfully",
+		Post:    updatedPost,
 	})
 }

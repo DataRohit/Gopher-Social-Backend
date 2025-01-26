@@ -497,6 +497,82 @@
                 }
             }
         },
+        "/post/{postID}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing post by its ID. Only the author can update the post.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Update an existing post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID to be updated",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request Body for updating a post",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User is not the author or account is inactive/banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to update post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdatePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile/me": {
             "get": {
                 "security": [
@@ -1548,6 +1624,50 @@
                 "message": {
                     "type": "string",
                     "example": "User Unfollowed Successfully"
+                }
+            }
+        },
+        "models.UpdatePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdatePostPayload": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Updated main content of my post."
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Updated brief description of the post."
+                },
+                "sub_title": {
+                    "type": "string",
+                    "example": "Updated Catchy Subtitle"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Updated Awesome Post"
+                }
+            }
+        },
+        "models.UpdatePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Updated Successfully"
+                },
+                "post": {
+                    "$ref": "#/definitions/models.Post"
                 }
             }
         },

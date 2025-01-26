@@ -20,13 +20,15 @@ import (
 //   - None
 //
 // Routes:
-//   - POST /post: Route to create a new post. Requires authentication.
+//   - POST /post/create: Route to create a new post. Requires authentication.
+//   - PUT /post/:postID: Route to update an existing post. Requires authentication and author role.
 func PostRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
-	postStore := stores.NewPostStore(dbPool)
+	postStore := stores.NewPostStore(dbPool, authStore)
 	postController := controllers.NewPostController(postStore, authStore, logger)
 
 	postRouter := router.Group("/post")
 	postRouter.Use(middlewares.AuthMiddleware(logger))
 	postRouter.POST("/create", postController.CreatePost)
+	postRouter.PUT("/:postID", postController.UpdatePost)
 }
