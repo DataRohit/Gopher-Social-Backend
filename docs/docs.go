@@ -1089,6 +1089,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/{commentID}": {
+            "get": {
+                "description": "Get a comment by comment ID and post ID. No authentication required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Get a comment by comment ID and post ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment ID",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/{commentID}/delete": {
             "delete": {
                 "security": [
@@ -2329,6 +2386,29 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Password Reset Link Sent Successfully If User Exists"
+                }
+            }
+        },
+        "models.GetCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "$ref": "#/definitions/models.Comment"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Comment Retrieved Successfully"
                 }
             }
         },

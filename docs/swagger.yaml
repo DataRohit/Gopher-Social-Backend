@@ -168,6 +168,21 @@ definitions:
         example: Password Reset Link Sent Successfully If User Exists
         type: string
     type: object
+  models.GetCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.GetCommentSuccessResponse:
+    properties:
+      comment:
+        $ref: '#/definitions/models.Comment'
+      message:
+        example: Comment Retrieved Successfully
+        type: string
+    type: object
   models.GetFollowersErrorResponse:
     properties:
       error:
@@ -1195,6 +1210,44 @@ paths:
       summary: Update an existing post
       tags:
       - posts
+  /post/{postID}/comment/{commentID}:
+    get:
+      consumes:
+      - application/json
+      description: Get a comment by comment ID and post ID. No authentication required.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment ID
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GetCommentSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.GetCommentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.GetCommentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.GetCommentErrorResponse'
+      summary: Get a comment by comment ID and post ID
+      tags:
+      - comments
   /post/{postID}/comment/{commentID}/delete:
     delete:
       consumes:

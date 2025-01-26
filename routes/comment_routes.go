@@ -34,4 +34,5 @@ func CommentRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus
 	commentRouter.POST("/create", commentController.CreateComment)
 	commentRouter.PUT("/:commentID/update", commentController.UpdateComment)
 	commentRouter.DELETE("/:commentID/delete", commentController.DeleteComment)
+	commentRouter.GET("/:commentID", commentController.GetComment)
 }

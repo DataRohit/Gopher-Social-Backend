@@ -362,3 +362,72 @@ func (cc *CommentController) DeleteComment(c *gin.Context) {
 		Message: "Comment Deleted Successfully",
 	})
 }
+
+// GetComment godoc
+// @Summary Get a comment by comment ID and post ID
+// @Description Get a comment by comment ID and post ID. No authentication required.
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Param commentID path string true "Comment ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Success 200 {object} models.GetCommentSuccessResponse
+// @Failure 400 {object} models.GetCommentErrorResponse
+// @Failure 404 {object} models.GetCommentErrorResponse
+// @Failure 500 {object} models.GetCommentErrorResponse
+// @Router /post/{postID}/comment/{commentID} [get]
+func (cc *CommentController) GetComment(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	commentIDStr := c.Param("commentID")
+
+	if postIDStr == "" || commentIDStr == "" {
+		cc.logger.Error("Post ID and Comment ID are required")
+		c.JSON(http.StatusBadRequest, models.GetCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and commentID are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.GetCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.GetCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid commentID format",
+		})
+		return
+	}
+
+	comment, err := cc.commentStore.GetCommentByID(c.Request.Context(), commentID, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			c.JSON(http.StatusNotFound, models.GetCommentErrorResponse{
+				Message: "Not Found",
+				Error:   "comment not found",
+			})
+			return
+		}
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to get comment from store")
+		c.JSON(http.StatusInternalServerError, models.GetCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to get comment",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GetCommentSuccessResponse{
+		Message: "Comment Retrieved Successfully",
+		Comment: comment,
+	})
+}
