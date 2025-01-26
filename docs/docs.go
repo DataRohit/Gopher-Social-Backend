@@ -1089,6 +1089,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/disliked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of comments disliked by the logged-in user under a specific post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "List disliked comments under a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of disliked comments under post",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch disliked comments under post",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/liked": {
             "get": {
                 "security": [
@@ -3134,6 +3202,32 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Post Liked Successfully"
+                }
+            }
+        },
+        "models.ListDislikedCommentsUnderPostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListDislikedCommentsUnderPostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Disliked Comments Retrieved Successfully"
                 }
             }
         },

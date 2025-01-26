@@ -600,3 +600,85 @@ func (clc *CommentLikesController) ListLikedCommentsUnderPost(c *gin.Context) {
 		Comments: comments,
 	})
 }
+
+// ListDislikedCommentsUnderPost godoc
+// @Summary      List disliked comments under a post
+// @Description  Retrieves a list of comments disliked by the logged-in user under a specific post (postID).
+// @Tags         comment_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post Identifier (Post ID)"
+// @Param        page query integer false "Page number for pagination" default(1)
+// @Success      200 {object} models.ListDislikedCommentsUnderPostSuccessResponse "Successfully retrieved list of disliked comments under post"
+// @Failure      400 {object} models.ListDislikedCommentsUnderPostErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ListDislikedCommentsUnderPostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.ListDislikedCommentsUnderPostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.ListDislikedCommentsUnderPostErrorResponse "Internal Server Error - Failed to fetch disliked comments under post"
+// @Router       /post/{postID}/comment/disliked [get]
+func (clc *CommentLikesController) ListDislikedCommentsUnderPost(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		clc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListDislikedCommentsUnderPostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		clc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.ListDislikedCommentsUnderPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID is required path parameter",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.ListDislikedCommentsUnderPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	_, err = clc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.ListDislikedCommentsUnderPostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.ListDislikedCommentsUnderPostErrorResponse{
+				Message: "Failed to Get Disliked Comments",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+	comments, err := clc.commentLikesStore.ListDislikedCommentsByUserIDForPost(c, userModel.ID, postID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get disliked comments under post from store")
+		c.JSON(http.StatusInternalServerError, models.ListDislikedCommentsUnderPostErrorResponse{
+			Message: "Failed to Get Disliked Comments",
+			Error:   "could not retrieve disliked comments from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListDislikedCommentsUnderPostSuccessResponse{
+		Message:  "Disliked Comments Retrieved Successfully",
+		Comments: comments,
+	})
+}

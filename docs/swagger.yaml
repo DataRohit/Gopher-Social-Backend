@@ -341,6 +341,23 @@ definitions:
         example: Post Liked Successfully
         type: string
     type: object
+  models.ListDislikedCommentsUnderPostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListDislikedCommentsUnderPostSuccessResponse:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      message:
+        example: Disliked Comments Retrieved Successfully
+        type: string
+    type: object
   models.ListDislikedPostsErrorResponse:
     properties:
       error:
@@ -1701,6 +1718,52 @@ paths:
       summary: Create a new comment on a post
       tags:
       - comments
+  /post/{postID}/comment/disliked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of comments disliked by the logged-in user under
+        a specific post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of disliked comments under post
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch disliked comments under
+            post
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List disliked comments under a post
+      tags:
+      - comment_likes
   /post/{postID}/comment/liked:
     get:
       consumes:
