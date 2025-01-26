@@ -82,7 +82,9 @@ func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID,
 			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
 			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
 			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
-			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count
+			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count,
+			(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.liked = TRUE) as likes,
+			(SELECT COUNT(*) FROM comment_likes cd WHERE cd.comment_id = c.id AND cd.liked = FALSE) as dislikes
 		FROM comments c
 		INNER JOIN users u ON c.author_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
@@ -95,6 +97,7 @@ func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID,
 		&comment.Author.Followers, &comment.Author.Following,
 		&comment.Post.ID, &comment.Post.AuthorID, &comment.Post.Title, &comment.Post.SubTitle, &comment.Post.Description, &comment.Post.Content, &comment.Post.CreatedAt, &comment.Post.UpdatedAt,
 		&comment.Post.Likes, &comment.Post.Dislikes,
+		&comment.Likes, &comment.Dislikes,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -184,7 +187,9 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
 			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
 			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
-			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count
+			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count,
+			(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.liked = TRUE) as likes,
+			(SELECT COUNT(*) FROM comment_likes cd WHERE cd.comment_id = c.id AND cd.liked = FALSE) as dislikes
 		FROM comments c
 		INNER JOIN users u ON c.author_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
@@ -210,6 +215,7 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 			&comment.Author.Followers, &comment.Author.Following,
 			&comment.Post.ID, &comment.Post.AuthorID, &comment.Post.Title, &comment.Post.SubTitle, &comment.Post.Description, &comment.Post.Content, &comment.Post.CreatedAt, &comment.Post.UpdatedAt,
 			&comment.Post.Likes, &comment.Post.Dislikes,
+			&comment.Likes, &comment.Dislikes,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan comment row: %w", err)
 		}

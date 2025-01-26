@@ -214,47 +214,7 @@ func (cls *CommentLikeStore) UndislikeComment(ctx context.Context, userID uuid.U
 //   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given user ID and post ID.
 //   - error: An error if fetching the comments fails.
 func (cls *CommentLikeStore) ListLikedCommentsByUserIDForPost(ctx context.Context, userID uuid.UUID, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
-	offset := (pageNumber - 1) * pageSize
-	rows, err := cls.dbPool.Query(ctx, `
-		SELECT
-			c.id, c.author_id, c.post_id, c.content, c.created_at, c.updated_at,
-			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
-			r.level, r.description,
-			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
-			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
-		FROM comment_likes cl
-		INNER JOIN comments c ON cl.comment_id = c.id
-		INNER JOIN users u ON c.author_id = u.id
-		INNER JOIN roles r ON u.role_id = r.id
-		WHERE cl.user_id = $1 AND c.post_id = $2 AND cl.liked = TRUE
-		ORDER BY c.created_at DESC
-		LIMIT $3 OFFSET $4
-	`, userID, postID, pageSize, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list liked comments for post: %w", err)
-	}
-	defer rows.Close()
-
-	var comments []*models.Comment
-	for rows.Next() {
-		comment := &models.Comment{Author: &models.User{Role: &models.Role{}}}
-		err := rows.Scan(
-			&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
-			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
-			&comment.Author.Role.Level, &comment.Author.Role.Description,
-			&comment.Author.Followers, &comment.Author.Following,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan comment row: %w", err)
-		}
-		comments = append(comments, comment)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during comments rows iteration: %w", err)
-	}
-
-	return comments, nil
+	return cls.listLikedCommentsByUserStatusForPostByUserID(ctx, userID, postID, pageNumber, pageSize, true)
 }
 
 // ListDislikedCommentsByUserIDForPost retrieves all comments disliked by a user under a specific post from the database with pagination.
@@ -271,47 +231,7 @@ func (cls *CommentLikeStore) ListLikedCommentsByUserIDForPost(ctx context.Contex
 //   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given user ID and post ID.
 //   - error: An error if fetching the comments fails.
 func (cls *CommentLikeStore) ListDislikedCommentsByUserIDForPost(ctx context.Context, userID uuid.UUID, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
-	offset := (pageNumber - 1) * pageSize
-	rows, err := cls.dbPool.Query(ctx, `
-		SELECT
-			c.id, c.author_id, c.post_id, c.content, c.created_at, c.updated_at,
-			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
-			r.level, r.description,
-			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
-			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
-		FROM comment_likes cl
-		INNER JOIN comments c ON cl.comment_id = c.id
-		INNER JOIN users u ON c.author_id = u.id
-		INNER JOIN roles r ON u.role_id = r.id
-		WHERE cl.user_id = $1 AND c.post_id = $2 AND cl.liked = FALSE
-		ORDER BY c.created_at DESC
-		LIMIT $3 OFFSET $4
-	`, userID, postID, pageSize, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list disliked comments for post: %w", err)
-	}
-	defer rows.Close()
-
-	var comments []*models.Comment
-	for rows.Next() {
-		comment := &models.Comment{Author: &models.User{Role: &models.Role{}}}
-		err := rows.Scan(
-			&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
-			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
-			&comment.Author.Role.Level, &comment.Author.Role.Description,
-			&comment.Author.Followers, &comment.Author.Following,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan comment row: %w", err)
-		}
-		comments = append(comments, comment)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during comments rows iteration: %w", err)
-	}
-
-	return comments, nil
+	return cls.listLikedCommentsByUserStatusForPostByUserID(ctx, userID, postID, pageNumber, pageSize, false)
 }
 
 // ListLikedCommentsByUserIdentifierForPost retrieves all comments liked by a user identifier under a specific post from the database with pagination.
@@ -328,24 +248,7 @@ func (cls *CommentLikeStore) ListDislikedCommentsByUserIDForPost(ctx context.Con
 //   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given user identifier and post ID.
 //   - error: An error if fetching the comments fails.
 func (cls *CommentLikeStore) ListLikedCommentsByUserIdentifierForPost(ctx context.Context, identifier string, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
-	authStore := NewAuthStore(cls.dbPool)
-	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
-	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			userID, uuidErr := uuid.Parse(identifier)
-			if uuidErr != nil {
-				return nil, ErrUserNotFound
-			}
-			user, err = authStore.GetUserByID(ctx, userID)
-			if err != nil {
-				return nil, ErrUserNotFound
-			}
-		} else {
-			return nil, fmt.Errorf("failed to get user by identifier: %w", err)
-		}
-	}
-
-	return cls.listLikedCommentsByUserStatusForPost(ctx, user.ID, postID, pageNumber, pageSize, true)
+	return cls.listLikedCommentsByUserStatusForPost(ctx, identifier, postID, pageNumber, pageSize, true)
 }
 
 // ListDislikedCommentsByUserIdentifierForPost retrieves all comments disliked by a user identifier under a specific post from the database with pagination.
@@ -362,6 +265,24 @@ func (cls *CommentLikeStore) ListLikedCommentsByUserIdentifierForPost(ctx contex
 //   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given user identifier and post ID.
 //   - error: An error if fetching the comments fails.
 func (cls *CommentLikeStore) ListDislikedCommentsByUserIdentifierForPost(ctx context.Context, identifier string, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	return cls.listLikedCommentsByUserStatusForPost(ctx, identifier, postID, pageNumber, pageSize, false)
+}
+
+// listLikedCommentsByUserStatusForPost is a helper function to retrieve comments based on like status (liked or disliked) for a user identified by user identifier under a post with pagination.
+// It is used by ListLikedCommentsByUserIdentifierForPost and ListDislikedCommentsByUserIdentifierForPost to avoid code duplication.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username or email of the user.
+//   - postID (uuid.UUID): ID of the post.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
+//   - liked (bool): True to retrieve liked comments, false for disliked comments.
+//
+// Returns:
+//   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given like status and user identifier.
+//   - error: ErrUserNotFound if user is not found, or other errors during database query.
+func (cls *CommentLikeStore) listLikedCommentsByUserStatusForPost(ctx context.Context, identifier string, postID uuid.UUID, pageNumber int, pageSize int, liked bool) ([]*models.Comment, error) {
 	authStore := NewAuthStore(cls.dbPool)
 	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
 	if err != nil {
@@ -379,11 +300,11 @@ func (cls *CommentLikeStore) ListDislikedCommentsByUserIdentifierForPost(ctx con
 		}
 	}
 
-	return cls.listLikedCommentsByUserStatusForPost(ctx, user.ID, postID, pageNumber, pageSize, false)
+	return cls.listLikedCommentsByUserStatusForPostByUserID(ctx, user.ID, postID, pageNumber, pageSize, liked)
 }
 
-// listLikedCommentsByUserStatusForPost is a helper function to retrieve comments based on like status (liked or disliked) for a user identified by user id under a post with pagination.
-// It is used by ListLikedCommentsByUserIdentifierForPost and ListDislikedCommentsByUserIdentifierForPost to avoid code duplication.
+// listLikedCommentsByUserStatusForPostByUserID is a helper function to retrieve comments based on like status (liked or disliked) for a user identified by userID under a post with pagination.
+// It is used by listLikedCommentsByUserStatusForPost to avoid code duplication.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
@@ -396,7 +317,7 @@ func (cls *CommentLikeStore) ListDislikedCommentsByUserIdentifierForPost(ctx con
 // Returns:
 //   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given like status and user identifier.
 //   - error: ErrUserNotFound if user is not found, or other errors during database query.
-func (cls *CommentLikeStore) listLikedCommentsByUserStatusForPost(ctx context.Context, userID uuid.UUID, postID uuid.UUID, pageNumber int, pageSize int, liked bool) ([]*models.Comment, error) {
+func (cls *CommentLikeStore) listLikedCommentsByUserStatusForPostByUserID(ctx context.Context, userID uuid.UUID, postID uuid.UUID, pageNumber int, pageSize int, liked bool) ([]*models.Comment, error) {
 	offset := (pageNumber - 1) * pageSize
 	rows, err := cls.dbPool.Query(ctx, `
 		SELECT
@@ -404,7 +325,9 @@ func (cls *CommentLikeStore) listLikedCommentsByUserStatusForPost(ctx context.Co
 			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
 			r.level, r.description,
 			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
-			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
+			(SELECT COUNT(*) FROM comment_likes cl_count WHERE cl_count.comment_id = c.id AND cl_count.liked = TRUE) as likes,
+			(SELECT COUNT(*) FROM comment_likes cd_count WHERE cd_count.comment_id = c.id AND cd_count.liked = FALSE) as dislikes
 		FROM comment_likes cl
 		INNER JOIN comments c ON cl.comment_id = c.id
 		INNER JOIN users u ON c.author_id = u.id
@@ -426,6 +349,7 @@ func (cls *CommentLikeStore) listLikedCommentsByUserStatusForPost(ctx context.Co
 			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
 			&comment.Author.Role.Level, &comment.Author.Role.Description,
 			&comment.Author.Followers, &comment.Author.Following,
+			&comment.Likes, &comment.Dislikes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan comment row: %w", err)
