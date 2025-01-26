@@ -1332,6 +1332,158 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/{commentID}/dislike": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to dislike a comment by comment identifier (commentID) under a post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "Dislike a comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment Identifier (Comment ID)",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully disliked comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post or Comment not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Already disliked comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to dislike comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.DislikeCommentErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to remove dislike from a comment by comment identifier (commentID) under a post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "Undislike a comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment Identifier (Comment ID)",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully removed dislike from comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post or Comment not found or dislike not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to remove dislike from comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.UndislikeCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/{commentID}/like": {
             "post": {
                 "security": [
@@ -2585,6 +2737,26 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DislikeCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DislikeCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Comment Disliked Successfully"
+                }
+            }
+        },
         "models.DislikePostErrorResponse": {
             "type": "object",
             "properties": {
@@ -3282,6 +3454,26 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "Router Healthy!"
+                }
+            }
+        },
+        "models.UndislikeCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UndislikeCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Comment Undisliked Successfully"
                 }
             }
         },

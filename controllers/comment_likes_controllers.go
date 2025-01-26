@@ -278,3 +278,242 @@ func (clc *CommentLikesController) UnlikeComment(c *gin.Context) {
 		Message: "Comment Unliked Successfully",
 	})
 }
+
+// DislikeComment godoc
+// @Summary      Dislike a comment
+// @Description  Allows a logged-in user to dislike a comment by comment identifier (commentID) under a post (postID).
+// @Tags         comment_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID    path     string  true  "Post Identifier (Post ID)"
+// @Param        commentID path     string  true  "Comment Identifier (Comment ID)"
+// @Success      200 {object} models.DislikeCommentSuccessResponse "Successfully disliked comment"
+// @Failure      400 {object} models.DislikeCommentErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.DislikeCommentErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.DislikeCommentErrorResponse "Forbidden - User account is inactive or banned"
+// @Failure      404 {object} models.DislikeCommentErrorResponse "Not Found - Post or Comment not found"
+// @Failure      409 {object} models.DislikeCommentErrorResponse "Conflict - Already disliked comment"
+// @Failure      500 {object} models.DislikeCommentErrorResponse "Internal Server Error - Failed to dislike comment"
+// @Router       /post/{postID}/comment/{commentID}/dislike [post]
+func (clc *CommentLikesController) DislikeComment(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		clc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DislikeCommentErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	postIDStr := c.Param("postID")
+	commentIDStr := c.Param("commentID")
+
+	if postIDStr == "" || commentIDStr == "" {
+		clc.logger.Error("Post ID and Comment ID are required in path")
+		c.JSON(http.StatusBadRequest, models.DislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and commentID are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.DislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "commentID": commentIDStr}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.DislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid comment ID format",
+		})
+		return
+	}
+
+	_, err = clc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.DislikeCommentErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.DislikeCommentErrorResponse{
+				Message: "Failed to Dislike Comment",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	_, err = clc.commentStore.GetCommentByID(c, commentID, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Comment not found")
+			c.JSON(http.StatusNotFound, models.DislikeCommentErrorResponse{
+				Message: "Comment Not Found",
+				Error:   "comment not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to get comment from store")
+			c.JSON(http.StatusInternalServerError, models.DislikeCommentErrorResponse{
+				Message: "Failed to Dislike Comment",
+				Error:   "could not retrieve comment from database",
+			})
+		}
+		return
+	}
+
+	_, err = clc.commentLikesStore.DislikeComment(c, userModel.ID, commentID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentDislikeAlreadyExists) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Comment Dislike Already Exists")
+			c.JSON(http.StatusConflict, models.DislikeCommentErrorResponse{
+				Message: "Dislike Comment Failed",
+				Error:   "already disliked comment",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to Dislike Comment in Store")
+			c.JSON(http.StatusInternalServerError, models.DislikeCommentErrorResponse{
+				Message: "Failed to Dislike Comment",
+				Error:   "could not dislike comment in database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DislikeCommentSuccessResponse{
+		Message: "Comment Disliked Successfully",
+	})
+}
+
+// UndislikeComment godoc
+// @Summary      Undislike a comment
+// @Description  Allows a logged-in user to remove dislike from a comment by comment identifier (commentID) under a post (postID).
+// @Tags         comment_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID    path     string  true  "Post Identifier (Post ID)"
+// @Param        commentID path     string  true  "Comment Identifier (Comment ID)"
+// @Success      200 {object} models.UndislikeCommentSuccessResponse "Successfully removed dislike from comment"
+// @Failure      400 {object} models.UndislikeCommentErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.UndislikeCommentErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.UndislikeCommentErrorResponse "Forbidden - User account is inactive or banned"
+// @Failure      404 {object} models.UndislikeCommentErrorResponse "Not Found - Post or Comment not found or dislike not found"
+// @Failure      500 {object} models.UndislikeCommentErrorResponse "Internal Server Error - Failed to remove dislike from comment"
+// @Router       /post/{postID}/comment/{commentID}/dislike [delete]
+func (clc *CommentLikesController) UndislikeComment(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		clc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.UndislikeCommentErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	postIDStr := c.Param("postID")
+	commentIDStr := c.Param("commentID")
+
+	if postIDStr == "" || commentIDStr == "" {
+		clc.logger.Error("Post ID and Comment ID are required in path")
+		c.JSON(http.StatusBadRequest, models.UndislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and commentID are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.UndislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "commentID": commentIDStr}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.UndislikeCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid comment ID format",
+		})
+		return
+	}
+
+	_, err = clc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.UndislikeCommentErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.UndislikeCommentErrorResponse{
+				Message: "Failed to Undislike Comment",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	_, err = clc.commentStore.GetCommentByID(c, commentID, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Comment not found")
+			c.JSON(http.StatusNotFound, models.UndislikeCommentErrorResponse{
+				Message: "Comment Not Found",
+				Error:   "comment not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to get comment from store")
+			c.JSON(http.StatusInternalServerError, models.UndislikeCommentErrorResponse{
+				Message: "Failed to Undislike Comment",
+				Error:   "could not retrieve comment from database",
+			})
+		}
+		return
+	}
+
+	err = clc.commentLikesStore.UndislikeComment(c, userModel.ID, commentID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentDislikeNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Comment Dislike Not Found")
+			c.JSON(http.StatusNotFound, models.UndislikeCommentErrorResponse{
+				Message: "Undislike Comment Failed",
+				Error:   "comment dislike not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "commentID": commentID, "userID": userModel.ID}).Error("Failed to Undislike Comment in Store")
+			c.JSON(http.StatusInternalServerError, models.UndislikeCommentErrorResponse{
+				Message: "Failed to Undislike Comment",
+				Error:   "could not undislike comment in database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.UndislikeCommentSuccessResponse{
+		Message: "Comment Undisliked Successfully",
+	})
+}

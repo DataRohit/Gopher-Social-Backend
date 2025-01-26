@@ -22,6 +22,8 @@ import (
 // Routes:
 //   - POST /post/:postID/comment/:commentID/like: Route to like a comment. Requires authentication.
 //   - DELETE /post/:postID/comment/:commentID/like: Route to unlike a comment. Requires authentication.
+//   - POST /post/:postID/comment/:commentID/dislike: Route to dislike a comment. Requires authentication.
+//   - DELETE /post/:postID/comment/:commentID/dislike: Route to undislike a comment. Requires authentication.
 func CommentLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	postStore := stores.NewPostStore(dbPool)
@@ -33,4 +35,6 @@ func CommentLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *lo
 	commentLikeRouter.Use(middlewares.AuthMiddleware(logger))
 	commentLikeRouter.POST("/like", commentLikesController.LikeComment)
 	commentLikeRouter.DELETE("/like", commentLikesController.UnlikeComment)
+	commentLikeRouter.POST("/dislike", commentLikesController.DislikeComment)
+	commentLikeRouter.DELETE("/dislike", commentLikesController.UndislikeComment)
 }

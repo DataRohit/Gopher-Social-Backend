@@ -32,3 +32,23 @@ type UnlikeCommentErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Dislike Comment Models
+type DislikeCommentSuccessResponse struct {
+	Message string `json:"message" example:"Comment Disliked Successfully"`
+}
+
+type DislikeCommentErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// Undislike Comment Models
+type UndislikeCommentSuccessResponse struct {
+	Message string `json:"message" example:"Comment Undisliked Successfully"`
+}
+
+type UndislikeCommentErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

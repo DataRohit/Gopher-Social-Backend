@@ -119,3 +119,83 @@ func (cls *CommentLikeStore) UnlikeComment(ctx context.Context, userID uuid.UUID
 
 	return nil
 }
+
+// DislikeComment creates a new comment dislike record in the database.
+// It records that a user has disliked a specific comment.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user who disliked the comment.
+//   - commentID (uuid.UUID): ID of the comment that was disliked.
+//
+// Returns:
+//   - *models.CommentLike: The created CommentLike object if successful.
+//   - error: An error if creating the dislike record fails or if the dislike already exists.
+func (cls *CommentLikeStore) DislikeComment(ctx context.Context, userID uuid.UUID, commentID uuid.UUID) (*models.CommentLike, error) {
+	var existingDislike models.CommentLike
+	err := cls.dbPool.QueryRow(ctx, `SELECT user_id, comment_id, liked, created_at FROM comment_likes WHERE user_id = $1 AND comment_id = $2`, userID, commentID).Scan(
+		&existingDislike.UserID, &existingDislike.CommentID, &existingDislike.Liked, &existingDislike.CreatedAt,
+	)
+	if err == nil {
+		if !existingDislike.Liked {
+			return nil, ErrCommentDislikeAlreadyExists
+		}
+
+		updatedDislike := models.CommentLike{}
+		err = cls.dbPool.QueryRow(ctx, `
+			UPDATE comment_likes
+			SET liked = FALSE
+			WHERE user_id = $1 AND comment_id = $2
+			RETURNING user_id, comment_id, liked, created_at
+		`, userID, commentID).Scan(
+			&updatedDislike.UserID, &updatedDislike.CommentID, &updatedDislike.Liked, &updatedDislike.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to update comment like from like to dislike: %w", err)
+		}
+		return &updatedDislike, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("failed to check for existing comment dislike: %w", err)
+	}
+
+	var createdDislike models.CommentLike
+	err = cls.dbPool.QueryRow(ctx, `
+		INSERT INTO comment_likes (user_id, comment_id, liked)
+		VALUES ($1, $2, FALSE)
+		RETURNING user_id, comment_id, liked, created_at
+	`, userID, commentID).Scan(
+		&createdDislike.UserID, &createdDislike.CommentID, &createdDislike.Liked, &createdDislike.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dislike comment: %w", err)
+	}
+
+	return &createdDislike, nil
+}
+
+// UndislikeComment removes a comment dislike record from the database.
+// It signifies that a user has removed dislike from a specific comment.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - userID (uuid.UUID): ID of the user who is removing dislike from the comment.
+//   - commentID (uuid.UUID): ID of the comment to be undisliked.
+//
+// Returns:
+//   - error: An error if removing the dislike record fails or if the dislike is not found.
+func (cls *CommentLikeStore) UndislikeComment(ctx context.Context, userID uuid.UUID, commentID uuid.UUID) error {
+	commandTag, err := cls.dbPool.Exec(ctx, `
+		DELETE FROM comment_likes
+		WHERE user_id = $1 AND comment_id = $2 AND liked = FALSE
+	`, userID, commentID)
+	if err != nil {
+		return fmt.Errorf("failed to undislike comment: %w", err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return ErrCommentDislikeNotFound
+	}
+
+	return nil
+}

@@ -124,6 +124,19 @@ definitions:
         example: Post Deleted Successfully
         type: string
     type: object
+  models.DislikeCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.DislikeCommentSuccessResponse:
+    properties:
+      message:
+        example: Comment Disliked Successfully
+        type: string
+    type: object
   models.DislikePostErrorResponse:
     properties:
       error:
@@ -591,6 +604,19 @@ definitions:
     properties:
       status:
         example: Router Healthy!
+        type: string
+    type: object
+  models.UndislikeCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UndislikeCommentSuccessResponse:
+    properties:
+      message:
+        example: Comment Undisliked Successfully
         type: string
     type: object
   models.UndislikePostErrorResponse:
@@ -1361,6 +1387,107 @@ paths:
       summary: Delete a comment
       tags:
       - comments
+  /post/{postID}/comment/{commentID}/dislike:
+    delete:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to remove dislike from a comment by comment
+        identifier (commentID) under a post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment Identifier (Comment ID)
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully removed dislike from comment
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentErrorResponse'
+        "404":
+          description: Not Found - Post or Comment not found or dislike not found
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to remove dislike from comment
+          schema:
+            $ref: '#/definitions/models.UndislikeCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Undislike a comment
+      tags:
+      - comment_likes
+    post:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to dislike a comment by comment identifier
+        (commentID) under a post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment Identifier (Comment ID)
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully disliked comment
+          schema:
+            $ref: '#/definitions/models.DislikeCommentSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+        "404":
+          description: Not Found - Post or Comment not found
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+        "409":
+          description: Conflict - Already disliked comment
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to dislike comment
+          schema:
+            $ref: '#/definitions/models.DislikeCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Dislike a comment
+      tags:
+      - comment_likes
   /post/{postID}/comment/{commentID}/like:
     delete:
       consumes:
