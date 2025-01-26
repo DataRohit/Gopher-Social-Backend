@@ -12,22 +12,19 @@ import (
 )
 
 type PostStore struct {
-	dbPool    *pgxpool.Pool
-	authStore *AuthStore // AuthStore to fetch user details
+	dbPool *pgxpool.Pool
 }
 
 // NewPostStore creates a new PostStore.
 //
 // Parameters:
 //   - dbPool (*pgxpool.Pool): Pgx connection pool.
-//   - authStore (*AuthStore): AuthStore instance.
 //
 // Returns:
 //   - *PostStore: PostStore instance.
-func NewPostStore(dbPool *pgxpool.Pool, authStore *AuthStore) *PostStore {
+func NewPostStore(dbPool *pgxpool.Pool) *PostStore {
 	return &PostStore{
-		dbPool:    dbPool,
-		authStore: authStore,
+		dbPool: dbPool,
 	}
 }
 
@@ -163,16 +160,19 @@ func (ps *PostStore) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	return nil
 }
 
-// ListPostsByAuthorID retrieves all posts from the database for a given author ID.
+// ListPostsByAuthorID retrieves all posts from the database for a given author ID with pagination.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - authorID (uuid.UUID): ID of the author whose posts are to be retrieved.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no posts are found.
 //   - error: An error if the database query fails.
-func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID) ([]*models.Post, error) {
+func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID, pageNumber int, pageSize int) ([]*models.Post, error) {
+	offset := (pageNumber - 1) * pageSize
 	rows, err := ps.dbPool.Query(ctx, `
 		SELECT
 			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
@@ -181,7 +181,8 @@ func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID
 		FROM posts p
 		WHERE author_id = $1
 		ORDER BY created_at DESC
-	`, authorID)
+		LIMIT $2 OFFSET $3
+	`, authorID, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list posts by author id: %w", err)
 	}
@@ -202,33 +203,6 @@ func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error during posts rows iteration: %w", err)
-	}
-
-	return posts, nil
-}
-
-// ListPostsByUserIDentifier retrieves all posts from the database for a given user identifier (username, email, or user ID).
-// It first fetches the user ID from the identifier using AuthStore and then retrieves posts for that author ID.
-//
-// Parameters:
-//   - ctx (context.Context): Context for the database operation.
-//   - identifier (string): Username, email, or user ID of the author whose posts are to be retrieved.
-//
-// Returns:
-//   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the user.
-//   - error: ErrUserNotFound if user is not found, or other errors during database query.
-func (ps *PostStore) ListPostsByUserIDentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
-	user, err := ps.authStore.GetUserByUsernameOrEmail(ctx, identifier)
-	if err != nil {
-		if errors.Is(err, ErrUserNotFound) {
-			return nil, ErrUserNotFound
-		}
-		return nil, fmt.Errorf("failed to get user by identifier: %w", err)
-	}
-
-	posts, err := ps.ListPostsByAuthorID(ctx, user.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list posts by author id: %w", err)
 	}
 
 	return posts, nil

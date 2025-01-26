@@ -555,6 +555,15 @@
                     "post_likes"
                 ],
                 "summary": "List liked posts of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved list of liked posts",
@@ -595,6 +604,15 @@
                     "posts"
                 ],
                 "summary": "List posts of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved list of user's posts",
@@ -642,6 +660,13 @@
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1545,6 +1570,15 @@
                     "follow"
                 ],
                 "summary": "Get followers of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved followers list",
@@ -1585,6 +1619,15 @@
                     "follow"
                 ],
                 "summary": "Get users being followed by logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved following list",
@@ -1699,6 +1742,13 @@
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1760,6 +1810,13 @@
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {

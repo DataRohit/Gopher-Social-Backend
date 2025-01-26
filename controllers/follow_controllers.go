@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -234,6 +235,7 @@ func (fc *FollowController) UnfollowUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.GetFollowersSuccessResponse "Successfully retrieved followers list"
 // @Failure      401 {object} models.GetFollowersErrorResponse "Unauthorized - User not logged in or invalid token"
 // @Failure      500 {object} models.GetFollowersErrorResponse "Internal Server Error - Failed to fetch followers"
@@ -249,8 +251,9 @@ func (fc *FollowController) GetFollowers(c *gin.Context) {
 		return
 	}
 	userModel := userCtx.(*models.User)
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	followers, err := fc.followStore.GetFollowersByUserID(context.Background(), userModel.ID)
+	followers, err := fc.followStore.GetFollowersByUserID(c, userModel.ID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		fc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get followers")
 		c.JSON(http.StatusInternalServerError, models.GetFollowersErrorResponse{
@@ -273,6 +276,7 @@ func (fc *FollowController) GetFollowers(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.GetFollowingSuccessResponse "Successfully retrieved following list"
 // @Failure      401 {object} models.GetFollowingErrorResponse "Unauthorized - User not logged in or invalid token"
 // @Failure      500 {object} models.GetFollowingErrorResponse "Internal Server Error - Failed to fetch following users"
@@ -288,8 +292,9 @@ func (fc *FollowController) GetFollowing(c *gin.Context) {
 		return
 	}
 	userModel := userCtx.(*models.User)
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	following, err := fc.followStore.GetFollowingByUserID(context.Background(), userModel.ID)
+	following, err := fc.followStore.GetFollowingByUserID(c, userModel.ID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		fc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get following users")
 		c.JSON(http.StatusInternalServerError, models.GetFollowingErrorResponse{
@@ -313,6 +318,7 @@ func (fc *FollowController) GetFollowing(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        identifier path string true "User Identifier (username, email, or user ID) of the user"
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.GetUserFollowersSuccessResponse "Successfully retrieved followers list for user"
 // @Failure      400 {object} models.GetUserFollowersErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.GetUserFollowersErrorResponse "Unauthorized - User not logged in or invalid token"
@@ -329,6 +335,7 @@ func (fc *FollowController) GetUserFollowers(c *gin.Context) {
 		})
 		return
 	}
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
 	var requestedUserID uuid.UUID
 	parsedUUID, err := uuid.Parse(identifier)
@@ -347,7 +354,7 @@ func (fc *FollowController) GetUserFollowers(c *gin.Context) {
 		requestedUserID = requestedUser.ID
 	}
 
-	followers, err := fc.followStore.GetFollowersByUserID(context.Background(), requestedUserID)
+	followers, err := fc.followStore.GetFollowersByUserID(c, requestedUserID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		fc.logger.WithFields(logrus.Fields{"error": err, "userID": requestedUserID}).Error("Failed to get followers for user")
 		c.JSON(http.StatusInternalServerError, models.GetUserFollowersErrorResponse{
@@ -371,6 +378,7 @@ func (fc *FollowController) GetUserFollowers(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        identifier path string true "User Identifier (username, email, or user ID) of the user"
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.GetUserFollowingSuccessResponse "Successfully retrieved following list for user"
 // @Failure      400 {object} models.GetUserFollowingErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.GetUserFollowingErrorResponse "Unauthorized - User not logged in or invalid token"
@@ -387,6 +395,7 @@ func (fc *FollowController) GetUserFollowing(c *gin.Context) {
 		})
 		return
 	}
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
 	var requestedUserID uuid.UUID
 	parsedUUID, err := uuid.Parse(identifier)
@@ -405,7 +414,7 @@ func (fc *FollowController) GetUserFollowing(c *gin.Context) {
 		requestedUserID = requestedUser.ID
 	}
 
-	following, err := fc.followStore.GetFollowingByUserID(context.Background(), requestedUserID)
+	following, err := fc.followStore.GetFollowingByUserID(c, requestedUserID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		fc.logger.WithFields(logrus.Fields{"error": err, "userID": requestedUserID}).Error("Failed to get following users for user")
 		c.JSON(http.StatusInternalServerError, models.GetUserFollowingErrorResponse{

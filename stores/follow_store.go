@@ -97,11 +97,14 @@ func (fs *FollowStore) UnfollowUser(ctx context.Context, followerID uuid.UUID, f
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - followeeID (uuid.UUID): ID of the user to get followers for.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.User: List of users following the user (followee) with follower and following counts.
 //   - error: An error if fetching followers fails.
-func (fs *FollowStore) GetFollowersByUserID(ctx context.Context, followeeID uuid.UUID) ([]*models.User, error) {
+func (fs *FollowStore) GetFollowersByUserID(ctx context.Context, followeeID uuid.UUID, pageNumber int, pageSize int) ([]*models.User, error) {
+	offset := (pageNumber - 1) * pageSize
 	rows, err := fs.dbPool.Query(ctx, `
 		SELECT
 			u.id, u.username, u.email, u.role_id, u.timeout_until, u.is_active, u.created_at, u.updated_at,
@@ -112,7 +115,9 @@ func (fs *FollowStore) GetFollowersByUserID(ctx context.Context, followeeID uuid
 		INNER JOIN users u ON f.follower_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE f.followee_id = $1 AND u.banned = FALSE AND u.is_active = TRUE
-	`, followeeID)
+		ORDER BY u.created_at DESC
+		LIMIT $2 OFFSET $3
+	`, followeeID, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get followers: %w", err)
 	}
@@ -144,11 +149,14 @@ func (fs *FollowStore) GetFollowersByUserID(ctx context.Context, followeeID uuid
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - followerID (uuid.UUID): ID of the user to get following users for.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.User: List of users being followed by the user (follower) with follower and following counts.
 //   - error: An error if fetching following users fails.
-func (fs *FollowStore) GetFollowingByUserID(ctx context.Context, followerID uuid.UUID) ([]*models.User, error) {
+func (fs *FollowStore) GetFollowingByUserID(ctx context.Context, followerID uuid.UUID, pageNumber int, pageSize int) ([]*models.User, error) {
+	offset := (pageNumber - 1) * pageSize
 	rows, err := fs.dbPool.Query(ctx, `
 		SELECT
 			u.id, u.username, u.email, u.role_id, u.timeout_until, u.is_active, u.created_at, u.updated_at,
@@ -159,7 +167,9 @@ func (fs *FollowStore) GetFollowingByUserID(ctx context.Context, followerID uuid
 		INNER JOIN users u ON f.followee_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE f.follower_id = $1 AND u.banned = FALSE AND u.is_active = TRUE
-	`, followerID)
+		ORDER BY u.created_at DESC
+		LIMIT $2 OFFSET $3
+	`, followerID, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get following users: %w", err)
 	}

@@ -1363,6 +1363,12 @@ paths:
       consumes:
       - application/json
       description: Retrieves a list of posts liked by the logged-in user.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1388,6 +1394,12 @@ paths:
       consumes:
       - application/json
       description: Retrieves a list of posts created by the logged-in user.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1420,6 +1432,11 @@ paths:
         name: identifier
         required: true
         type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1658,6 +1675,11 @@ paths:
         name: identifier
         required: true
         type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1698,6 +1720,11 @@ paths:
         name: identifier
         required: true
         type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1778,6 +1805,12 @@ paths:
       consumes:
       - application/json
       description: Retrieves a list of users who are following the logged-in user.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -1803,6 +1836,12 @@ paths:
       consumes:
       - application/json
       description: Retrieves a list of users that the logged-in user is following.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:

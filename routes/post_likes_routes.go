@@ -30,7 +30,7 @@ import (
 //   - GET /post/user/:identifier/disliked: Route to get all disliked posts of a user by identifier. Requires authentication.
 func PostLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
-	postStore := stores.NewPostStore(dbPool, authStore)
+	postStore := stores.NewPostStore(dbPool)
 	postLikesStore := stores.NewPostLikeStore(dbPool)
 	postLikesController := controllers.NewPostLikesController(postLikesStore, postStore, authStore, logger)
 
@@ -40,8 +40,8 @@ func PostLikeRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logru
 	postLikeRouter.DELETE("/:postID/unlike", postLikesController.UnlikePost)
 	postLikeRouter.POST("/:postID/dislike", postLikesController.DislikePost)
 	postLikeRouter.DELETE("/:postID/undislike", postLikesController.UndislikePost)
-	postLikeRouter.GET("/liked", postLikesController.ListLikedPosts)
-	postLikeRouter.GET("/disliked", postLikesController.ListDislikedPosts)
-	postLikeRouter.GET("/user/:identifier/liked", postLikesController.ListLikedPostsByUserIdentifier)
-	postLikeRouter.GET("/user/:identifier/disliked", postLikesController.ListDislikedPostsByUserIdentifier)
+	postLikeRouter.GET("/liked", middlewares.PaginationMiddleware(), postLikesController.ListLikedPosts)
+	postLikeRouter.GET("/disliked", middlewares.PaginationMiddleware(), postLikesController.ListDislikedPosts)
+	postLikeRouter.GET("/user/:identifier/liked", middlewares.PaginationMiddleware(), postLikesController.ListLikedPostsByUserIdentifier)
+	postLikeRouter.GET("/user/:identifier/disliked", middlewares.PaginationMiddleware(), postLikesController.ListDislikedPostsByUserIdentifier)
 }

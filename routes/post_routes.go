@@ -28,7 +28,7 @@ import (
 //   - GET /post/user/:identifier: Route to list posts created by a user identifier. Requires authentication.
 func PostRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
-	postStore := stores.NewPostStore(dbPool, authStore)
+	postStore := stores.NewPostStore(dbPool)
 	postController := controllers.NewPostController(postStore, authStore, logger)
 
 	postRouter := router.Group("/post")
@@ -37,6 +37,6 @@ func PostRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Lo
 	postRouter.PUT("/:postID", postController.UpdatePost)
 	postRouter.DELETE("/:postID", postController.DeletePost)
 	postRouter.GET("/:postID", postController.GetPost)
-	postRouter.GET("/me", postController.ListMyPosts)
-	postRouter.GET("/user/:identifier", postController.ListPostsByUserIdentifier)
+	postRouter.GET("/me", middlewares.PaginationMiddleware(), postController.ListMyPosts)
+	postRouter.GET("/user/:identifier", middlewares.PaginationMiddleware(), postController.ListPostsByUserIdentifier)
 }

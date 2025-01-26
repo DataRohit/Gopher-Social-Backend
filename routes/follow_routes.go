@@ -36,8 +36,8 @@ func FollowRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.
 	followRouter.Use(middlewares.AuthMiddleware(logger))
 	followRouter.POST("/follow/:identifier", followController.FollowUser)
 	followRouter.DELETE("/unfollow/:identifier", followController.UnfollowUser)
-	followRouter.GET("/followers", followController.GetFollowers)
-	followRouter.GET("/following", followController.GetFollowing)
-	followRouter.GET("/:identifier/followers", followController.GetUserFollowers)
-	followRouter.GET("/:identifier/following", followController.GetUserFollowing)
+	followRouter.GET("/followers", middlewares.PaginationMiddleware(), followController.GetFollowers)
+	followRouter.GET("/following", middlewares.PaginationMiddleware(), followController.GetFollowing)
+	followRouter.GET("/:identifier/followers", middlewares.PaginationMiddleware(), followController.GetUserFollowers)
+	followRouter.GET("/:identifier/following", middlewares.PaginationMiddleware(), followController.GetUserFollowing)
 }

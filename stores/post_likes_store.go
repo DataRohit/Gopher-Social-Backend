@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// PostLikeStore manages post like data operations.
 type PostLikeStore struct {
 	dbPool *pgxpool.Pool
 }
@@ -231,74 +230,84 @@ func (pls *PostLikeStore) GetPostLikeByUserAndPost(ctx context.Context, userID u
 	return &postLike, nil
 }
 
-// ListLikedPostsByUserID retrieves all posts liked by a user from the database.
+// ListLikedPostsByUserID retrieves all posts liked by a user from the database with pagination.
 // It returns a list of posts with like and dislike counts, and author information including follower and following counts.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - userID (uuid.UUID): ID of the user.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no liked posts are found.
 //   - error: An error if the database query fails.
-func (pls *PostLikeStore) ListLikedPostsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Post, error) {
-	return pls.listPostsByLikeStatus(ctx, userID, true)
+func (pls *PostLikeStore) ListLikedPostsByUserID(ctx context.Context, userID uuid.UUID, pageNumber int, pageSize int) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatus(ctx, userID, true, pageNumber, pageSize)
 }
 
-// ListDislikedPostsByUserID retrieves all posts disliked by a user from the database.
+// ListDislikedPostsByUserID retrieves all posts disliked by a user from the database with pagination.
 // It returns a list of posts with like and dislike counts, and author information including follower and following counts.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - userID (uuid.UUID): ID of the user.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no disliked posts are found.
 //   - error: An error if the database query fails.
-func (pls *PostLikeStore) ListDislikedPostsByUserID(ctx context.Context, userID uuid.UUID) ([]*models.Post, error) {
-	return pls.listPostsByLikeStatus(ctx, userID, false)
+func (pls *PostLikeStore) ListDislikedPostsByUserID(ctx context.Context, userID uuid.UUID, pageNumber int, pageSize int) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatus(ctx, userID, false, pageNumber, pageSize)
 }
 
-// ListLikedPostsByUserIdentifier retrieves all liked posts of a user by user identifier (username, email, or user ID).
+// ListLikedPostsByUserIdentifier retrieves all liked posts of a user by user identifier (username, email, or user ID) with pagination.
 // It resolves the user identifier to a user ID and then fetches the liked posts for that user.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - identifier (string): Username, email, or user ID of the user.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no liked posts are found for the user.
 //   - error: ErrUserNotFound if user is not found, or other errors during database query.
-func (pls *PostLikeStore) ListLikedPostsByUserIdentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
-	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, true)
+func (pls *PostLikeStore) ListLikedPostsByUserIdentifier(ctx context.Context, identifier string, pageNumber int, pageSize int) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, true, pageNumber, pageSize)
 }
 
-// ListDislikedPostsByUserIdentifier retrieves all disliked posts of a user by user identifier (username, email, or user ID).
+// ListDislikedPostsByUserIdentifier retrieves all disliked posts of a user by user identifier (username, email, or user ID) with pagination.
 // It resolves the user identifier to a user ID and then fetches the disliked posts for that user.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - identifier (string): Username, email, or user ID of the user.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no disliked posts are found for the user.
 //   - error: ErrUserNotFound if user is not found, or other errors during database query.
-func (pls *PostLikeStore) ListDislikedPostsByUserIdentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
-	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, false)
+func (pls *PostLikeStore) ListDislikedPostsByUserIdentifier(ctx context.Context, identifier string, pageNumber int, pageSize int) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, false, pageNumber, pageSize)
 }
 
-// listPostsByLikeStatusByIdentifier is a helper function to retrieve posts based on like status (liked or disliked) for a user identified by identifier.
+// listPostsByLikeStatusByIdentifier is a helper function to retrieve posts based on like status (liked or disliked) for a user identified by identifier with pagination.
 // It is used by ListLikedPostsByUserIdentifier and ListDislikedPostsByUserIdentifier to avoid code duplication.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - identifier (string): Username, email, or user ID of the user.
 //   - liked (bool): True to retrieve liked posts, false for disliked posts.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the given like status and user identifier.
 //   - error: ErrUserNotFound if user is not found, or other errors during database query.
-func (pls *PostLikeStore) listPostsByLikeStatusByIdentifier(ctx context.Context, identifier string, liked bool) ([]*models.Post, error) {
+func (pls *PostLikeStore) listPostsByLikeStatusByIdentifier(ctx context.Context, identifier string, liked bool, pageNumber int, pageSize int) ([]*models.Post, error) {
 	authStore := NewAuthStore(pls.dbPool) // Create a new AuthStore instance
 	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
 	if err != nil {
@@ -308,21 +317,24 @@ func (pls *PostLikeStore) listPostsByLikeStatusByIdentifier(ctx context.Context,
 		return nil, fmt.Errorf("failed to get user by identifier: %w", err)
 	}
 
-	return pls.listPostsByLikeStatus(ctx, user.ID, liked)
+	return pls.listPostsByLikeStatus(ctx, user.ID, liked, pageNumber, pageSize)
 }
 
-// listPostsByLikeStatus is a helper function to retrieve posts based on like status (liked or disliked).
+// listPostsByLikeStatus is a helper function to retrieve posts based on like status (liked or disliked) with pagination.
 // It is used by ListLikedPostsByUserID and ListDislikedPostsByUserID to avoid code duplication.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - userID (uuid.UUID): ID of the user.
 //   - liked (bool): True to retrieve liked posts, false for disliked posts.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
 //
 // Returns:
 //   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the given like status.
 //   - error: An error if the database query fails.
-func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid.UUID, liked bool) ([]*models.Post, error) {
+func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid.UUID, liked bool, pageNumber int, pageSize int) ([]*models.Post, error) {
+	offset := (pageNumber - 1) * pageSize
 	rows, err := pls.dbPool.Query(ctx, `
 		SELECT
 			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
@@ -338,7 +350,8 @@ func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid
 		INNER JOIN roles r ON u.role_id = r.id
 		WHERE pl.user_id = $1 AND pl.liked = $2
 		ORDER BY p.created_at DESC
-	`, userID, liked)
+		LIMIT $3 OFFSET $4
+	`, userID, liked, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list posts by like status: %w", err)
 	}

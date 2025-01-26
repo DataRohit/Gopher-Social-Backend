@@ -688,8 +688,8 @@ func (ac *AuthController) ResendActivationLink(c *gin.Context) {
 				Message: "Failed to Resend Activation Link",
 				Error:   "failed to fetch user",
 			})
-			return
 		}
+		return
 	}
 
 	if user.IsActive {

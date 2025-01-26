@@ -561,6 +561,15 @@ const docTemplate = `{
                     "post_likes"
                 ],
                 "summary": "List liked posts of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved list of liked posts",
@@ -601,6 +610,15 @@ const docTemplate = `{
                     "posts"
                 ],
                 "summary": "List posts of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved list of user's posts",
@@ -648,6 +666,13 @@ const docTemplate = `{
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1551,6 +1576,15 @@ const docTemplate = `{
                     "follow"
                 ],
                 "summary": "Get followers of logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved followers list",
@@ -1591,6 +1625,15 @@ const docTemplate = `{
                     "follow"
                 ],
                 "summary": "Get users being followed by logged-in user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved following list",
@@ -1705,6 +1748,13 @@ const docTemplate = `{
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1766,6 +1816,13 @@ const docTemplate = `{
                         "name": "identifier",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {

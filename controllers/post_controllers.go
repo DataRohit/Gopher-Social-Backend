@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// PostController handles post related requests.
 type PostController struct {
 	postStore *stores.PostStore
 	authStore *stores.AuthStore
@@ -413,6 +413,7 @@ func (pc *PostController) GetPost(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.ListMyPostsSuccessResponse "Successfully retrieved list of user's posts"
 // @Failure      401 {object} models.ListMyPostsErrorResponse "Unauthorized - User not logged in or invalid token"
 // @Failure      500 {object} models.ListMyPostsErrorResponse "Internal Server Error - Failed to fetch user's posts"
@@ -428,8 +429,9 @@ func (pc *PostController) ListMyPosts(c *gin.Context) {
 		return
 	}
 	userModel := user.(*models.User)
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := pc.postStore.ListPostsByAuthorID(c, userModel.ID)
+	posts, err := pc.postStore.ListPostsByAuthorID(c, userModel.ID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		pc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get posts by author ID from store")
 		c.JSON(http.StatusInternalServerError, models.ListMyPostsErrorResponse{
@@ -453,6 +455,7 @@ func (pc *PostController) ListMyPosts(c *gin.Context) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        identifier path string true "User Identifier (username, email, or user ID)"
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.ListUserPostsSuccessResponse "Successfully retrieved list of user's posts"
 // @Failure      400 {object} models.ListUserPostsErrorResponse "Bad Request - Invalid input"
 // @Failure      401 {object} models.ListUserPostsErrorResponse "Unauthorized - User not logged in or invalid token"
@@ -479,8 +482,9 @@ func (pc *PostController) ListPostsByUserIdentifier(c *gin.Context) {
 		})
 		return
 	}
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := pc.postStore.ListPostsByUserIDentifier(c, identifier)
+	user, err := pc.authStore.GetUserByUsernameOrEmail(c, identifier)
 	if err != nil {
 		if errors.Is(err, stores.ErrUserNotFound) {
 			pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
@@ -489,12 +493,21 @@ func (pc *PostController) ListPostsByUserIdentifier(c *gin.Context) {
 				Error:   "user not found",
 			})
 		} else {
-			pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get posts by user identifier from store")
+			pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get user by identifier from store")
 			c.JSON(http.StatusInternalServerError, models.ListUserPostsErrorResponse{
 				Message: "Failed to Get User Posts",
-				Error:   "could not retrieve posts from database",
+				Error:   "could not retrieve user from database",
 			})
 		}
+	}
+
+	posts, err := pc.postStore.ListPostsByAuthorID(c, user.ID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get posts by author ID from store")
+		c.JSON(http.StatusInternalServerError, models.ListUserPostsErrorResponse{
+			Message: "Failed to Get User Posts",
+			Error:   "could not retrieve posts from database",
+		})
 		return
 	}
 

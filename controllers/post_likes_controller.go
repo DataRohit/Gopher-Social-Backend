@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// PostLikesController handles post like related requests.
 type PostLikesController struct {
 	postLikesStore *stores.PostLikeStore
 	postStore      *stores.PostStore
@@ -399,6 +399,7 @@ func (plc *PostLikesController) UndislikePost(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
+// @Param        page query integer false "Page number for pagination" default(1)
 // @Success      200 {object} models.ListLikedPostsSuccessResponse "Successfully retrieved list of liked posts"
 // @Failure      401 {object} models.ListLikedPostsErrorResponse "Unauthorized - User not logged in or invalid token"
 // @Failure      500 {object} models.ListLikedPostsErrorResponse "Internal Server Error - Failed to fetch liked posts"
@@ -414,8 +415,9 @@ func (plc *PostLikesController) ListLikedPosts(c *gin.Context) {
 		return
 	}
 	userModel := userCtx.(*models.User)
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := plc.postLikesStore.ListLikedPostsByUserID(c, userModel.ID)
+	posts, err := plc.postLikesStore.ListLikedPostsByUserID(c, userModel.ID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		plc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get liked posts from store")
 		c.JSON(http.StatusInternalServerError, models.ListLikedPostsErrorResponse{
@@ -453,8 +455,9 @@ func (plc *PostLikesController) ListDislikedPosts(c *gin.Context) {
 		return
 	}
 	userModel := userCtx.(*models.User)
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := plc.postLikesStore.ListDislikedPostsByUserID(c, userModel.ID)
+	posts, err := plc.postLikesStore.ListDislikedPostsByUserID(c, userModel.ID, pageNumber, middlewares.PageSize)
 	if err != nil {
 		plc.logger.WithFields(logrus.Fields{"error": err, "userID": userModel.ID}).Error("Failed to get disliked posts from store")
 		c.JSON(http.StatusInternalServerError, models.ListDislikedPostsErrorResponse{
@@ -504,8 +507,9 @@ func (plc *PostLikesController) ListLikedPostsByUserIdentifier(c *gin.Context) {
 		})
 		return
 	}
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := plc.postLikesStore.ListLikedPostsByUserIdentifier(c, identifier)
+	posts, err := plc.postLikesStore.ListLikedPostsByUserIdentifier(c, identifier, pageNumber, middlewares.PageSize)
 	if err != nil {
 		if errors.Is(err, stores.ErrUserNotFound) {
 			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
@@ -563,8 +567,9 @@ func (plc *PostLikesController) ListDislikedPostsByUserIdentifier(c *gin.Context
 		})
 		return
 	}
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
 
-	posts, err := plc.postLikesStore.ListDislikedPostsByUserIdentifier(c, identifier)
+	posts, err := plc.postLikesStore.ListDislikedPostsByUserIdentifier(c, identifier, pageNumber, middlewares.PageSize)
 	if err != nil {
 		if errors.Is(err, stores.ErrUserNotFound) {
 			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
