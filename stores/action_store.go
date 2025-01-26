@@ -40,6 +40,12 @@ var ErrAdminCannotDeactivateAdmin = errors.New("admin cannot deactivate another 
 // ErrModeratorCannotDeactivateModeratorOrAdmin is returned when a moderator tries to deactivate a moderator or admin.
 var ErrModeratorCannotDeactivateModeratorOrAdmin = errors.New("moderator can only deactivate normal users")
 
+// ErrAdminCannotActivateAdmin is returned when an admin tries to activate another admin.
+var ErrAdminCannotActivateAdmin = errors.New("admin cannot activate another admin")
+
+// ErrModeratorCannotActivateModeratorOrAdmin is returned when a moderator tries to activate a moderator or admin.
+var ErrModeratorCannotActivateModeratorOrAdmin = errors.New("moderator can only activate normal users")
+
 // TimeoutUser applies a timeout to a user until the specified time.
 //
 // Parameters:
@@ -158,6 +164,29 @@ func (as *ActionStore) DeactivateUser(ctx context.Context, targetUserID uuid.UUI
 	`, targetUserID)
 	if err != nil {
 		return fmt.Errorf("failed to deactivate user: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+// ActivateUser activates a user by setting their is_active status to true.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - targetUserID (uuid.UUID): ID of the user to activate.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) ActivateUser(ctx context.Context, targetUserID uuid.UUID) error {
+	commandTag, err := as.dbPool.Exec(ctx, `
+		UPDATE users
+		SET is_active = TRUE
+		WHERE id = $1
+	`, targetUserID)
+	if err != nil {
+		return fmt.Errorf("failed to activate user: %w", err)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return ErrUserNotFound

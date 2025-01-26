@@ -1040,6 +1040,50 @@ info:
   title: Gopher Social API
   version: "1.0"
 paths:
+  /action/activate/{userID}:
+    post:
+      consumes:
+      - application/json
+      description: Activates a user, allowing them to access the platform.
+      parameters:
+      - description: User ID to activate
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully activated user
+          schema:
+            $ref: '#/definitions/models.ActivateUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            be activated by requester
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to activate user
+          schema:
+            $ref: '#/definitions/models.ActivateUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Activate a user
+      tags:
+      - action
   /action/deactivate/{userID}:
     delete:
       consumes:
