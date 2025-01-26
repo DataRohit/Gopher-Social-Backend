@@ -15,6 +15,9 @@ CREATE TABLE profiles (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE INDEX idx_profiles_id ON profiles (id);
+CREATE INDEX idx_profiles_user_id ON profiles (user_id);
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN

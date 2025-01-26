@@ -8,6 +8,9 @@ CREATE TABLE roles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX idx_roles_id ON roles (id);
+CREATE INDEX idx_roles_level ON roles (level);
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
