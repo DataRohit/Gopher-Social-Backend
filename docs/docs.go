@@ -440,6 +440,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new post by a logged-in user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Create a new post",
+                "parameters": [
+                    {
+                        "description": "Request Body for creating a post",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully created post",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to create post",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreatePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile/me": {
             "get": {
                 "security": [
@@ -986,6 +1049,56 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CreatePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreatePostPayload": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "This is the main content of my post."
+                },
+                "description": {
+                    "type": "string",
+                    "example": "A brief description of the post."
+                },
+                "sub_title": {
+                    "type": "string",
+                    "example": "A Catchy Subtitle"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 3,
+                    "example": "My Awesome Post"
+                }
+            }
+        },
+        "models.CreatePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Created Successfully"
+                },
+                "post": {
+                    "$ref": "#/definitions/models.Post"
+                }
+            }
+        },
         "models.FollowUserErrorResponse": {
             "type": "object",
             "properties": {
@@ -1189,6 +1302,50 @@ const docTemplate = `{
                 },
                 "profile": {
                     "$ref": "#/definitions/models.Profile"
+                }
+            }
+        },
+        "models.Post": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "This is the main content of my post."
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "A brief description of the post."
+                },
+                "dislikes": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "likes": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "sub_title": {
+                    "type": "string",
+                    "example": "A Catchy Subtitle"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "My Awesome Post"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2025-01-25T12:34:01.159498Z"
                 }
             }
         },

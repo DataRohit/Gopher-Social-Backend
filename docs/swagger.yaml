@@ -13,6 +13,41 @@ definitions:
         example: User Activated Successfully
         type: string
     type: object
+  models.CreatePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.CreatePostPayload:
+    properties:
+      content:
+        example: This is the main content of my post.
+        type: string
+      description:
+        example: A brief description of the post.
+        type: string
+      sub_title:
+        example: A Catchy Subtitle
+        type: string
+      title:
+        example: My Awesome Post
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  models.CreatePostSuccessResponse:
+    properties:
+      message:
+        example: Post Created Successfully
+        type: string
+      post:
+        $ref: '#/definitions/models.Post'
+    type: object
   models.FollowUserErrorResponse:
     properties:
       error:
@@ -147,6 +182,38 @@ definitions:
         type: string
       profile:
         $ref: '#/definitions/models.Profile'
+    type: object
+  models.Post:
+    properties:
+      author:
+        $ref: '#/definitions/models.User'
+      content:
+        example: This is the main content of my post.
+        type: string
+      created_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
+      description:
+        example: A brief description of the post.
+        type: string
+      dislikes:
+        example: 10
+        type: integer
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      likes:
+        example: 100
+        type: integer
+      sub_title:
+        example: A Catchy Subtitle
+        type: string
+      title:
+        example: My Awesome Post
+        type: string
+      updated_at:
+        example: "2025-01-25T12:34:01.159498Z"
+        type: string
     type: object
   models.PostgresHealthyResponse:
     properties:
@@ -738,6 +805,46 @@ paths:
       summary: Router Health Check
       tags:
       - health
+  /post/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new post by a logged-in user.
+      parameters:
+      - description: Request Body for creating a post
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreatePostPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully created post
+          schema:
+            $ref: '#/definitions/models.CreatePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.CreatePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.CreatePostErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.CreatePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to create post
+          schema:
+            $ref: '#/definitions/models.CreatePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new post
+      tags:
+      - posts
   /profile/{identifier}:
     get:
       consumes:
