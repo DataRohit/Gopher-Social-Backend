@@ -313,3 +313,83 @@ func (pc *PostController) DeletePost(c *gin.Context) {
 		Message: "Post Deleted Successfully",
 	})
 }
+
+// GetPost godoc
+// @Summary      Get a post by ID
+// @Description  Retrieves a post by its ID. Any logged-in user can access this route.
+// @Tags         posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post ID to be retrieved"
+// @Success      200 {object} models.GetPostSuccessResponse "Successfully retrieved post"
+// @Failure      400 {object} models.GetPostErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.GetPostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.GetPostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.GetPostErrorResponse "Internal Server Error - Failed to get post"
+// @Router       /post/{postID} [get]
+func (pc *PostController) GetPost(c *gin.Context) {
+	_, exists := c.Get("user")
+	if !exists {
+		pc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.GetPostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		pc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.GetPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "post ID is required in path",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.GetPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	retrievedPost, err := pc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.GetPostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			pc.logger.WithFields(logrus.Fields{"error": err, "postID": postID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.GetPostErrorResponse{
+				Message: "Failed to Get Post",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	author, err := pc.authStore.GetUserByID(c, retrievedPost.AuthorID)
+	if err != nil {
+		pc.logger.WithFields(logrus.Fields{"error": err, "postID": retrievedPost.ID, "authorID": retrievedPost.AuthorID}).Error("Failed to fetch author details")
+		c.JSON(http.StatusInternalServerError, models.GetPostErrorResponse{
+			Message: "Failed to Get Post",
+			Error:   "could not fetch author details",
+		})
+		return
+	}
+	retrievedPost.Author = author
+
+	c.JSON(http.StatusOK, models.GetPostSuccessResponse{
+		Message: "Post Retrieved Successfully",
+		Post:    retrievedPost,
+	})
+}

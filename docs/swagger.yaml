@@ -147,6 +147,21 @@ definitions:
       profile:
         $ref: '#/definitions/models.Profile'
     type: object
+  models.GetPostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.GetPostSuccessResponse:
+    properties:
+      message:
+        example: Post Retrieved Successfully
+        type: string
+      post:
+        $ref: '#/definitions/models.Post'
+    type: object
   models.GetUserFollowersErrorResponse:
     properties:
       error:
@@ -886,6 +901,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete an existing post
+      tags:
+      - posts
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a post by its ID. Any logged-in user can access this
+        route.
+      parameters:
+      - description: Post ID to be retrieved
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved post
+          schema:
+            $ref: '#/definitions/models.GetPostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.GetPostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.GetPostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.GetPostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to get post
+          schema:
+            $ref: '#/definitions/models.GetPostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a post by ID
       tags:
       - posts
     put:
