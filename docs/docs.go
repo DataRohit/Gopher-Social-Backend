@@ -1575,7 +1575,7 @@ const docTemplate = `{
                 "tags": [
                     "user_follow"
                 ],
-                "summary": "Get followers of logged-in user",
+                "summary": "List followers of logged-in user",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1624,7 +1624,7 @@ const docTemplate = `{
                 "tags": [
                     "user_follow"
                 ],
-                "summary": "Get users being followed by logged-in user",
+                "summary": "List users being followed by logged-in user",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1740,7 +1740,7 @@ const docTemplate = `{
                 "tags": [
                     "user_follow"
                 ],
-                "summary": "Get followers of a user by identifier",
+                "summary": "List followers of a user by identifier",
                 "parameters": [
                     {
                         "type": "string",
@@ -1808,7 +1808,7 @@ const docTemplate = `{
                 "tags": [
                     "user_follow"
                 ],
-                "summary": "Get users being followed by a user by identifier",
+                "summary": "List users being followed by a user by identifier",
                 "parameters": [
                     {
                         "type": "string",

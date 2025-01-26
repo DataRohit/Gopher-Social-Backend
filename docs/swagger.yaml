@@ -1705,7 +1705,7 @@ paths:
             $ref: '#/definitions/models.GetUserFollowersErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get followers of a user by identifier
+      summary: List followers of a user by identifier
       tags:
       - user_follow
   /user/{identifier}/following:
@@ -1750,7 +1750,7 @@ paths:
             $ref: '#/definitions/models.GetUserFollowingErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get users being followed by a user by identifier
+      summary: List users being followed by a user by identifier
       tags:
       - user_follow
   /user/follow/{identifier}:
@@ -1828,7 +1828,7 @@ paths:
             $ref: '#/definitions/models.GetFollowersErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get followers of logged-in user
+      summary: List followers of logged-in user
       tags:
       - user_follow
   /user/following:
@@ -1859,7 +1859,7 @@ paths:
             $ref: '#/definitions/models.GetFollowingErrorResponse'
       security:
       - BearerAuth: []
-      summary: Get users being followed by logged-in user
+      summary: List users being followed by logged-in user
       tags:
       - user_follow
   /user/unfollow/{identifier}:

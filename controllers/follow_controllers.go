@@ -229,7 +229,7 @@ func (fc *FollowController) UnfollowUser(c *gin.Context) {
 }
 
 // GetFollowers godoc
-// @Summary      Get followers of logged-in user
+// @Summary      List followers of logged-in user
 // @Description  Retrieves a list of users who are following the logged-in user.
 // @Tags         user_follow
 // @Accept       json
@@ -270,7 +270,7 @@ func (fc *FollowController) GetFollowers(c *gin.Context) {
 }
 
 // GetFollowing godoc
-// @Summary      Get users being followed by logged-in user
+// @Summary      List users being followed by logged-in user
 // @Description  Retrieves a list of users that the logged-in user is following.
 // @Tags         user_follow
 // @Accept       json
@@ -311,7 +311,7 @@ func (fc *FollowController) GetFollowing(c *gin.Context) {
 }
 
 // GetUserFollowers godoc
-// @Summary      Get followers of a user by identifier
+// @Summary      List followers of a user by identifier
 // @Description  Retrieves a list of users who are following the user identified by identifier.
 // @Tags         user_follow
 // @Accept       json
@@ -371,7 +371,7 @@ func (fc *FollowController) GetUserFollowers(c *gin.Context) {
 }
 
 // GetUserFollowing godoc
-// @Summary      Get users being followed by a user by identifier
+// @Summary      List users being followed by a user by identifier
 // @Description  Retrieves a list of users that the user identified by identifier is following.
 // @Tags         user_follow
 // @Accept       json

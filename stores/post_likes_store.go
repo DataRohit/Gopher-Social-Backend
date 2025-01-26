@@ -338,7 +338,7 @@ func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid
 	rows, err := pls.dbPool.Query(ctx, `
 		SELECT
 			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
-			u.username, u.email,
+			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
 			r.level, r.description,
 			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
 			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count,
@@ -362,7 +362,7 @@ func (pls *PostLikeStore) listPostsByLikeStatus(ctx context.Context, userID uuid
 		post := &models.Post{Author: &models.User{Role: &models.Role{}}}
 		err := rows.Scan(
 			&post.ID, &post.AuthorID, &post.Title, &post.SubTitle, &post.Description, &post.Content, &post.CreatedAt, &post.UpdatedAt,
-			&post.Author.Username, &post.Author.Email,
+			&post.Author.ID, &post.Author.Username, &post.Author.Email, &post.Author.Banned, &post.Author.IsActive, &post.Author.CreatedAt, &post.Author.UpdatedAt,
 			&post.Author.Role.Level, &post.Author.Role.Description,
 			&post.Likes, &post.Dislikes,
 			&post.Author.Followers, &post.Author.Following,
