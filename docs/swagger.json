@@ -1331,6 +1331,81 @@
                 }
             }
         },
+        "/post/{postID}/comment/user/{identifier}/disliked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of comments disliked by a user, identified by username, email, or user ID, under a specific post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "List disliked comments of a user under a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of disliked comments for user under post",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post or User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch disliked comments",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedCommentsUnderPostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/user/{identifier}/liked": {
             "get": {
                 "security": [

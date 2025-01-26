@@ -1849,6 +1849,57 @@ paths:
       summary: List comments of a user for a post
       tags:
       - comments
+  /post/{postID}/comment/user/{identifier}/disliked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of comments disliked by a user, identified by
+        username, email, or user ID, under a specific post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: User Identifier (username, email, or user ID)
+        in: path
+        name: identifier
+        required: true
+        type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of disliked comments for user under
+            post
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "404":
+          description: Not Found - Post or User not found
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch disliked comments
+          schema:
+            $ref: '#/definitions/models.ListDislikedCommentsUnderPostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List disliked comments of a user under a post
+      tags:
+      - comment_likes
   /post/{postID}/comment/user/{identifier}/liked:
     get:
       consumes:

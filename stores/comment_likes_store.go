@@ -348,6 +348,40 @@ func (cls *CommentLikeStore) ListLikedCommentsByUserIdentifierForPost(ctx contex
 	return cls.listLikedCommentsByUserStatusForPost(ctx, user.ID, postID, pageNumber, pageSize, true)
 }
 
+// ListDislikedCommentsByUserIdentifierForPost retrieves all comments disliked by a user identifier under a specific post from the database with pagination.
+// It resolves the user identifier to a user ID and then fetches the disliked comments for that user.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username or email of the user.
+//   - postID (uuid.UUID): ID of the post.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Page size for pagination.
+//
+// Returns:
+//   - []*models.Comment: A slice of Comment pointers, or nil if no comments are found for the given user identifier and post ID.
+//   - error: An error if fetching the comments fails.
+func (cls *CommentLikeStore) ListDislikedCommentsByUserIdentifierForPost(ctx context.Context, identifier string, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	authStore := NewAuthStore(cls.dbPool)
+	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			userID, uuidErr := uuid.Parse(identifier)
+			if uuidErr != nil {
+				return nil, ErrUserNotFound
+			}
+			user, err = authStore.GetUserByID(ctx, userID)
+			if err != nil {
+				return nil, ErrUserNotFound
+			}
+		} else {
+			return nil, fmt.Errorf("failed to get user by identifier: %w", err)
+		}
+	}
+
+	return cls.listLikedCommentsByUserStatusForPost(ctx, user.ID, postID, pageNumber, pageSize, false)
+}
+
 // listLikedCommentsByUserStatusForPost is a helper function to retrieve comments based on like status (liked or disliked) for a user identified by user id under a post with pagination.
 // It is used by ListLikedCommentsByUserIdentifierForPost and ListDislikedCommentsByUserIdentifierForPost to avoid code duplication.
 //
