@@ -156,6 +156,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/action/comment/{commentID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a comment, accessible to moderators and admins.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Delete a comment by comment ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comment ID to delete",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Comment not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to delete comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/action/deactivate/{userID}": {
             "delete": {
                 "security": [
@@ -218,6 +285,73 @@ const docTemplate = `{
                         "description": "Internal Server Error - Failed to deactivate user",
                         "schema": {
                             "$ref": "#/definitions/models.DeactivateUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/post/{postID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a post, accessible to admins only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Delete a post by post ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID to delete",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to delete post",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeletePostErrorResponse"
                         }
                     }
                 }

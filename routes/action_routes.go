@@ -27,6 +27,8 @@ import (
 //   - POST /action/activate/:userID: Route to activate a user. Requires moderator or admin role.
 //   - POST /action/ban/:userID: Route to ban a user. Requires admin role.
 //   - POST /action/unban/:userID: Route to unban a user. Requires admin role.
+//   - DELETE /action/comment/:commentID: Route to delete a comment. Requires moderator or admin role.
+//   - DELETE /action/post/:postID: Route to delete a post. Requires admin role.
 func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	actionStore := stores.NewActionStore(dbPool)
@@ -41,4 +43,6 @@ func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.
 	actionRouter.POST("/activate/:userID", actionController.ActivateUser)
 	actionRouter.POST("/ban/:userID", actionController.BanUser)
 	actionRouter.POST("/unban/:userID", actionController.UnbanUser)
+	actionRouter.DELETE("/comment/:commentID", actionController.DeleteComment)
+	actionRouter.DELETE("/post/:postID", actionController.DeletePost)
 }

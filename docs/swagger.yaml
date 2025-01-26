@@ -1154,6 +1154,49 @@ paths:
       summary: Ban a user
       tags:
       - action
+  /action/comment/{commentID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a comment, accessible to moderators and admins.
+      parameters:
+      - description: Comment ID to delete
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted comment
+          schema:
+            $ref: '#/definitions/models.DeleteCommentSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "404":
+          description: Not Found - Comment not found
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to delete comment
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a comment by comment ID
+      tags:
+      - action
   /action/deactivate/{userID}:
     delete:
       consumes:
@@ -1196,6 +1239,49 @@ paths:
       security:
       - BearerAuth: []
       summary: Deactivate a user
+      tags:
+      - action
+  /action/post/{postID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a post, accessible to admins only.
+      parameters:
+      - description: Post ID to delete
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted post
+          schema:
+            $ref: '#/definitions/models.DeletePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to delete post
+          schema:
+            $ref: '#/definitions/models.DeletePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a post by post ID
       tags:
       - action
   /action/timeout:

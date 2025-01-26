@@ -753,3 +753,161 @@ func (ac *ActionController) BanUser(c *gin.Context) {
 		Message: "User Banned Successfully",
 	})
 }
+
+// DeleteComment godoc
+// @Summary      Delete a comment by comment ID
+// @Description  Deletes a comment, accessible to moderators and admins.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        commentID path string true "Comment ID to delete"
+// @Success      200 {object} models.DeleteCommentSuccessResponse "Successfully deleted comment"
+// @Failure      400 {object} models.DeleteCommentErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.DeleteCommentErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.DeleteCommentErrorResponse "Forbidden - Insufficient permissions"
+// @Failure      404 {object} models.DeleteCommentErrorResponse "Not Found - Comment not found"
+// @Failure      500 {object} models.DeleteCommentErrorResponse "Internal Server Error - Failed to delete comment"
+// @Router       /action/comment/{commentID} [delete]
+func (ac *ActionController) DeleteComment(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DeleteCommentErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	if requestingUser.Role.Level < 2 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.DeleteCommentErrorResponse{
+			Message: "Forbidden",
+			Error:   "insufficient permissions",
+		})
+		return
+	}
+
+	commentIDStr := c.Param("commentID")
+	if commentIDStr == "" {
+		ac.logger.Error("Comment ID is required in path")
+		c.JSON(http.StatusBadRequest, models.DeleteCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "commentID is required path parameter",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "commentID": commentIDStr}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.DeleteCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid commentID format",
+		})
+		return
+	}
+
+	err = ac.actionStore.DeleteCommentByCommentID(c, commentID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "commentID": commentID, "requestingUserID": requestingUser.ID}).Error("Comment not found")
+			c.JSON(http.StatusNotFound, models.DeleteCommentErrorResponse{
+				Message: "Comment Not Found",
+				Error:   "comment not found",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "commentID": commentID, "requestingUserID": requestingUser.ID}).Error("Failed to delete comment from store")
+			c.JSON(http.StatusInternalServerError, models.DeleteCommentErrorResponse{
+				Message: "Failed to Delete Comment",
+				Error:   "could not delete comment",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DeleteCommentSuccessResponse{
+		Message: "Comment Deleted Successfully",
+	})
+}
+
+// DeletePost godoc
+// @Summary      Delete a post by post ID
+// @Description  Deletes a post, accessible to admins only.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post ID to delete"
+// @Success      200 {object} models.DeletePostSuccessResponse "Successfully deleted post"
+// @Failure      400 {object} models.DeletePostErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.DeletePostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.DeletePostErrorResponse "Forbidden - Insufficient permissions"
+// @Failure      404 {object} models.DeletePostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.DeletePostErrorResponse "Internal Server Error - Failed to delete post"
+// @Router       /action/post/{postID} [delete]
+func (ac *ActionController) DeletePost(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DeletePostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	if requestingUser.Role.Level != 3 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.DeletePostErrorResponse{
+			Message: "Forbidden",
+			Error:   stores.ErrAdminOnlyOperation.Error(),
+		})
+		return
+	}
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		ac.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.DeletePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID is required path parameter",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.DeletePostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	err = ac.actionStore.DeletePostByPostID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "requestingUserID": requestingUser.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.DeletePostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "requestingUserID": requestingUser.ID}).Error("Failed to delete post from store")
+			c.JSON(http.StatusInternalServerError, models.DeletePostErrorResponse{
+				Message: "Failed to Delete Post",
+				Error:   "could not delete post",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DeletePostSuccessResponse{
+		Message: "Post Deleted Successfully",
+	})
+}

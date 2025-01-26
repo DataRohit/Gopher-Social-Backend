@@ -52,6 +52,9 @@ var ErrAdminCannotBanAdmin = errors.New("admin cannot ban another admin")
 // ErrAdminCannotUnbanAdmin is returned when an admin tries to unban another admin.
 var ErrAdminCannotUnbanAdmin = errors.New("admin cannot unban another admin")
 
+// ErrAdminOnlyOperation is returned when a moderator tries to perform an admin only operation.
+var ErrAdminOnlyOperation = errors.New("this operation is restricted to admins only")
+
 
 // TimeoutUser applies a timeout to a user until the specified time.
 //
@@ -262,6 +265,50 @@ func (as *ActionStore) UnbanUser(ctx context.Context, targetUserID uuid.UUID) er
 	}
 	if commandTag.RowsAffected() == 0 {
 		return ErrUserNotFound
+	}
+	return nil
+}
+
+// DeleteCommentByCommentID deletes a comment by its ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - commentID (uuid.UUID): ID of the comment to delete.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) DeleteCommentByCommentID(ctx context.Context, commentID uuid.UUID) error {
+	commandTag, err := as.dbPool.Exec(ctx, `
+		DELETE FROM comments
+		WHERE id = $1
+	`, commentID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrCommentNotFound
+	}
+	return nil
+}
+
+// DeletePostByPostID deletes a post by its ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post to delete.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) DeletePostByPostID(ctx context.Context, postID uuid.UUID) error {
+	commandTag, err := as.dbPool.Exec(ctx, `
+		DELETE FROM posts
+		WHERE id = $1
+	`, postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrPostNotFound
 	}
 	return nil
 }
