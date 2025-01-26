@@ -77,6 +77,7 @@ This API is built using Go, leveraging the Gin Gonic framework for high performa
 *   [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) - Containerization
 *   [Swaggo](https://github.com/swaggo/swag) - Swagger for API Documentation
 *   [Make](https://www.gnu.org/software/make/) - Build Automation Tool
+*   [aider](https://aider.chat/) - AI pair programming + `gemini-2.0-flash-thinking-exp-01-21` Large Language Model
 
 ## Environment Variables ⚙️
 
