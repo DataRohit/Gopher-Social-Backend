@@ -22,6 +22,7 @@ import (
 // Routes:
 //   - PUT /profile/update: Route to update user profile. Requires authentication.
 //   - GET /profile/me: Route to get logged-in user profile. Requires authentication.
+//   - GET /profile/:identifier: Route to get user profile by identifier. Requires authentication.
 func ProfileRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	profileStore := stores.NewProfileStore(dbPool)
 	profileController := controllers.NewProfileController(profileStore, logger)
@@ -30,4 +31,5 @@ func ProfileRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus
 	profileRouter.Use(middlewares.AuthMiddleware(logger))
 	profileRouter.PUT("/update", profileController.UpdateProfile)
 	profileRouter.GET("/me", profileController.GetLoggedInUserProfile)
+	profileRouter.GET("/:identifier", profileController.GetUserProfile)
 }

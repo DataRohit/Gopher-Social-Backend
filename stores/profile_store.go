@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/google/uuid"
@@ -175,4 +176,98 @@ func (ps *ProfileStore) GetProfileForLoggedInUser(ctx context.Context, userID uu
 		return nil, fmt.Errorf("failed to get profile for logged-in user: %w", err)
 	}
 	return profile, nil
+}
+
+// GetProfileByIdentifier retrieves a user profile by username, email, or user ID.
+// It attempts to identify the identifier type and queries the database accordingly.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username, email, or user ID of the user profile to retrieve.
+//
+// Returns:
+//   - *models.Profile: The retrieved profile if found.
+//   - error: ErrProfileNotFound if profile not found or other errors during database query.
+func (ps *ProfileStore) GetProfileByIdentifier(ctx context.Context, identifier string) (*models.Profile, error) {
+	var profile *models.Profile
+	var err error
+
+	userID, uuidErr := uuid.Parse(identifier)
+	if uuidErr == nil {
+		profile, err = ps.GetProfileByUserID(ctx, userID)
+		if err == nil {
+			return profile, nil
+		} else if !errors.Is(err, ErrProfileNotFound) {
+			return nil, fmt.Errorf("failed to get profile by user ID: %w", err)
+		}
+	}
+
+	profile, err = ps.getProfileByUsernameOrEmail(ctx, identifier)
+	if err == nil {
+		return profile, nil
+	} else if !errors.Is(err, ErrProfileNotFound) {
+		return nil, fmt.Errorf("failed to get profile by username or email: %w", err)
+	}
+
+	return nil, ErrProfileNotFound
+}
+
+// getProfileByUsernameOrEmail retrieves a user profile by either username or email.
+// It queries the database to find a user matching the given username or email.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username or email to search for.
+//
+// Returns:
+//   - *models.Profile: The retrieved profile if found.
+//   - error: ErrProfileNotFound if profile not found or other errors during database query.
+func (ps *ProfileStore) getProfileByUsernameOrEmail(ctx context.Context, identifier string) (*models.Profile, error) {
+	var profile models.Profile
+	profile.User = &models.User{}
+	profile.User.Role = &models.Role{}
+
+	var query string
+	if strings.Contains(identifier, "@") {
+		query = `
+			SELECT
+				p.id, p.user_id, p.first_name, p.last_name, p.website, p.github, p.linkedin, p.twitter, p.google_scholar, p.created_at, p.updated_at,
+				u.id, u.username, u.email, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at,
+				r.level, r.description,
+				(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+				(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+			FROM profiles p
+			INNER JOIN users u ON p.user_id = u.id
+			INNER JOIN roles r ON u.role_id = r.id
+			WHERE u.email = $1
+		`
+	} else {
+		query = `
+			SELECT
+				p.id, p.user_id, p.first_name, p.last_name, p.website, p.github, p.linkedin, p.twitter, p.google_scholar, p.created_at, p.updated_at,
+				u.id, u.username, u.email, u.timeout_until, u.banned, u.is_active, u.created_at, u.updated_at,
+				r.level, r.description,
+				(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+				(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+			FROM profiles p
+			INNER JOIN users u ON p.user_id = u.id
+			INNER JOIN roles r ON u.role_id = r.id
+			WHERE u.username = $1
+		`
+	}
+
+	err := ps.dbPool.QueryRow(ctx, query, identifier).Scan(
+		&profile.ID, &profile.UserID, &profile.FirstName, &profile.LastName, &profile.Website, &profile.Github, &profile.LinkedIn, &profile.Twitter, &profile.GoogleScholar, &profile.CreatedAt, &profile.UpdatedAt,
+		&profile.User.ID, &profile.User.Username, &profile.User.Email, &profile.User.TimeoutUntil, &profile.User.Banned, &profile.User.IsActive, &profile.User.CreatedAt, &profile.User.UpdatedAt,
+		&profile.User.Role.Level, &profile.User.Role.Description,
+		&profile.User.Followers, &profile.User.Following,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, fmt.Errorf("failed to get profile by username or email: %w", err)
+	}
+
+	return &profile, nil
 }

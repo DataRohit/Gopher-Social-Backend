@@ -73,6 +73,21 @@ definitions:
       profile:
         $ref: '#/definitions/models.Profile'
     type: object
+  models.GetUserProfileErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.GetUserProfileSuccessResponse:
+    properties:
+      message:
+        example: Profile Retrieved Successfully
+        type: string
+      profile:
+        $ref: '#/definitions/models.Profile'
+    type: object
   models.PostgresHealthyResponse:
     properties:
       status:
@@ -671,6 +686,51 @@ paths:
       summary: Router Health Check
       tags:
       - health
+  /profile/{identifier}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the profile of a user by their identifier (username,
+        email, or user ID).
+      parameters:
+      - description: User Identifier (username, email, or user ID)
+        in: path
+        name: identifier
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved profile
+          schema:
+            $ref: '#/definitions/models.GetUserProfileSuccessResponse'
+        "400":
+          description: Bad Request - Invalid identifier format
+          schema:
+            $ref: '#/definitions/models.GetUserProfileErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.GetUserProfileErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned or requested
+            user is banned
+          schema:
+            $ref: '#/definitions/models.GetUserProfileErrorResponse'
+        "404":
+          description: Not Found - Profile not found for the given identifier
+          schema:
+            $ref: '#/definitions/models.GetUserProfileErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to get profile
+          schema:
+            $ref: '#/definitions/models.GetUserProfileErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile by identifier
+      tags:
+      - profile
   /profile/me:
     get:
       consumes:

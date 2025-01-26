@@ -549,6 +549,73 @@
                 }
             }
         },
+        "/profile/{identifier}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the profile of a user by their identifier (username, email, or user ID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Get user profile by identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid identifier format",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned or requested user is banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Profile not found for the given identifier",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to get profile",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetUserProfileErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/follow": {
             "post": {
                 "security": [
@@ -795,6 +862,29 @@
             }
         },
         "models.GetLoggedInUserProfileSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Profile Retrieved Successfully"
+                },
+                "profile": {
+                    "$ref": "#/definitions/models.Profile"
+                }
+            }
+        },
+        "models.GetUserProfileErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetUserProfileSuccessResponse": {
             "type": "object",
             "properties": {
                 "message": {

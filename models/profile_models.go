@@ -52,3 +52,14 @@ type GetLoggedInUserProfileErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Get User Profile Models
+type GetUserProfileSuccessResponse struct {
+	Message string   `json:"message" example:"Profile Retrieved Successfully"`
+	Profile *Profile `json:"profile"`
+}
+
+type GetUserProfileErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
