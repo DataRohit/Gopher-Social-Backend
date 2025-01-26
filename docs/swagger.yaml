@@ -92,6 +92,19 @@ definitions:
       post:
         $ref: '#/definitions/models.Post'
     type: object
+  models.DeleteCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.DeleteCommentSuccessResponse:
+    properties:
+      message:
+        example: Comment Deleted Successfully
+        type: string
+    type: object
   models.DeletePostErrorResponse:
     properties:
       error:
@@ -1182,48 +1195,56 @@ paths:
       summary: Update an existing post
       tags:
       - posts
-  /post/{postID}/comment/create:
-    post:
+  /post/{postID}/comment/{commentID}/delete:
+    delete:
       consumes:
       - application/json
-      description: Create a new comment on a post. Requires authentication.
+      description: Delete a comment. Requires authentication and user must be the
+        author of the comment.
       parameters:
       - description: Post ID
         in: path
         name: postID
         required: true
         type: string
-      - description: Comment payload
-        in: body
-        name: payload
+      - description: Comment ID
+        in: path
+        name: commentID
         required: true
-        schema:
-          $ref: '#/definitions/models.CreateCommentPayload'
+        type: string
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/models.CreateCommentSuccessResponse'
+            $ref: '#/definitions/models.DeleteCommentSuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.CreateCommentErrorResponse'
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.CreateCommentErrorResponse'
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.CreateCommentErrorResponse'
+            $ref: '#/definitions/models.DeleteCommentErrorResponse'
       security:
       - BearerAuth: []
-      summary: Create a new comment on a post
+      summary: Delete a comment
       tags:
-      - Comments
-  /post/{postID}/comment/update/{commentID}:
+      - comments
+  /post/{postID}/comment/{commentID}/update:
     put:
       consumes:
       - application/json
@@ -1276,7 +1297,48 @@ paths:
       - BearerAuth: []
       summary: Update an existing comment
       tags:
-      - Comments
+      - comments
+  /post/{postID}/comment/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new comment on a post. Requires authentication.
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCommentPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateCommentSuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.CreateCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new comment on a post
+      tags:
+      - comments
   /post/{postID}/dislike:
     post:
       consumes:

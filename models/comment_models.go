@@ -46,3 +46,13 @@ type UpdateCommentErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Delete Comment Models
+type DeleteCommentSuccessResponse struct {
+	Message string `json:"message" example:"Comment Deleted Successfully"`
+}
+
+type DeleteCommentErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

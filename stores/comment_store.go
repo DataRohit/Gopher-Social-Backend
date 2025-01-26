@@ -54,19 +54,20 @@ func (cs *CommentStore) CreateComment(ctx context.Context, comment *models.Comme
 		return nil, fmt.Errorf("failed to create comment: %w", err)
 	}
 
-	return cs.GetCommentByID(ctx, comment.ID)
+	return cs.GetCommentByID(ctx, comment.ID, comment.PostID)
 }
 
-// GetCommentByID retrieves a comment from the database by its ID.
+// GetCommentByID retrieves a comment from the database by its ID and Post ID.
 //
 // Parameters:
 //   - ctx (context.Context): Context for the database operation.
 //   - commentID (uuid.UUID): ID of the comment to retrieve.
+//   - postID (uuid.UUID): ID of the post to which the comment belongs.
 //
 // Returns:
 //   - *models.Comment: The retrieved comment if found.
 //   - error: ErrCommentNotFound if comment not found or other errors during database query.
-func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID) (*models.Comment, error) {
+func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID, postID uuid.UUID) (*models.Comment, error) {
 	var comment models.Comment
 	comment.Author = &models.User{}
 	comment.Author.Role = &models.Role{}
@@ -86,8 +87,8 @@ func (cs *CommentStore) GetCommentByID(ctx context.Context, commentID uuid.UUID)
 		INNER JOIN users u ON c.author_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
 		INNER JOIN posts p ON c.post_id = p.id
-		WHERE c.id = $1
-	`, commentID).Scan(
+		WHERE c.id = $1 AND p.id = $2
+	`, commentID, postID).Scan(
 		&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
 		&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
 		&comment.Author.Role.Level, &comment.Author.Role.Description,
@@ -130,5 +131,30 @@ func (cs *CommentStore) UpdateComment(ctx context.Context, comment *models.Comme
 		return nil, ErrCommentNotFound
 	}
 
-	return cs.GetCommentByID(ctx, comment.ID)
+	return cs.GetCommentByID(ctx, comment.ID, comment.PostID)
+}
+
+// DeleteComment deletes a comment from the database by its ID and Post ID.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - commentID (uuid.UUID): ID of the comment to delete.
+//   - postID (uuid.UUID): ID of the post to which the comment belongs.
+//
+// Returns:
+//   - error: An error if deletion fails, nil if successful.
+func (cs *CommentStore) DeleteComment(ctx context.Context, commentID uuid.UUID, postID uuid.UUID) error {
+	commandTag, err := cs.dbPool.Exec(ctx, `
+		DELETE FROM comments
+		WHERE id = $1 AND post_id = $2
+	`, commentID, postID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %w", err)
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return ErrCommentNotFound
+	}
+
+	return nil
 }

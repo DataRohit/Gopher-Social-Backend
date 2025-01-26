@@ -40,7 +40,7 @@ func NewCommentController(commentStore *stores.CommentStore, postStore *stores.P
 // CreateComment godoc
 // @Summary Create a new comment on a post
 // @Description Create a new comment on a post. Requires authentication.
-// @Tags Comments
+// @Tags comments
 // @Accept json
 // @Produce json
 // @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
@@ -127,7 +127,7 @@ func (cc *CommentController) CreateComment(c *gin.Context) {
 // UpdateComment godoc
 // @Summary Update an existing comment
 // @Description Update an existing comment. Requires authentication.
-// @Tags Comments
+// @Tags comments
 // @Accept json
 // @Produce json
 // @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
@@ -140,7 +140,7 @@ func (cc *CommentController) CreateComment(c *gin.Context) {
 // @Failure 403 {object} models.UpdateCommentErrorResponse
 // @Failure 404 {object} models.UpdateCommentErrorResponse
 // @Failure 500 {object} models.UpdateCommentErrorResponse
-// @Router /post/{postID}/comment/update/{commentID} [put]
+// @Router /post/{postID}/comment/{commentID}/update [put]
 func (cc *CommentController) UpdateComment(c *gin.Context) {
 	postIDStr := c.Param("postID")
 	commentIDStr := c.Param("commentID")
@@ -204,7 +204,7 @@ func (cc *CommentController) UpdateComment(c *gin.Context) {
 		return
 	}
 
-	existingComment, err := cc.commentStore.GetCommentByID(c.Request.Context(), commentID)
+	existingComment, err := cc.commentStore.GetCommentByID(c.Request.Context(), commentID, postID)
 	if err != nil {
 		if errors.Is(err, stores.ErrCommentNotFound) {
 			c.JSON(http.StatusNotFound, models.UpdateCommentErrorResponse{
@@ -250,5 +250,115 @@ func (cc *CommentController) UpdateComment(c *gin.Context) {
 	c.JSON(http.StatusOK, models.UpdateCommentSuccessResponse{
 		Message: "Comment Updated Successfully",
 		Comment: updatedComment,
+	})
+}
+
+// DeleteComment godoc
+// @Summary Delete a comment
+// @Description Delete a comment. Requires authentication and user must be the author of the comment.
+// @Tags comments
+// @Accept json
+// @Produce json
+// @Param postID path string true "Post ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Param commentID path string true "Comment ID" example:"550e8400-e29b-41d4-a716-446655440000"
+// @Security BearerAuth
+// @Success 200 {object} models.DeleteCommentSuccessResponse
+// @Failure 400 {object} models.DeleteCommentErrorResponse
+// @Failure 401 {object} models.DeleteCommentErrorResponse
+// @Failure 403 {object} models.DeleteCommentErrorResponse
+// @Failure 404 {object} models.DeleteCommentErrorResponse
+// @Failure 500 {object} models.DeleteCommentErrorResponse
+// @Router /post/{postID}/comment/{commentID}/delete [delete]
+func (cc *CommentController) DeleteComment(c *gin.Context) {
+	postIDStr := c.Param("postID")
+	commentIDStr := c.Param("commentID")
+
+	if postIDStr == "" || commentIDStr == "" {
+		cc.logger.Error("Post ID and Comment ID are required")
+		c.JSON(http.StatusBadRequest, models.DeleteCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID and commentID are required path parameters",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.DeleteCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid postID format",
+		})
+		return
+	}
+
+	commentID, err := uuid.Parse(commentIDStr)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Invalid Comment ID format")
+		c.JSON(http.StatusBadRequest, models.DeleteCommentErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid commentID format",
+		})
+		return
+	}
+
+	userCtx, exists := c.Get("user")
+	if !exists {
+		cc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.DeleteCommentErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	user, ok := userCtx.(*models.User)
+	if !ok {
+		cc.logger.Error("Invalid user type in context. Middleware misconfiguration.")
+		c.JSON(http.StatusInternalServerError, models.DeleteCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "internal server error",
+		})
+		return
+	}
+
+	existingComment, err := cc.commentStore.GetCommentByID(c.Request.Context(), commentID, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrCommentNotFound) {
+			c.JSON(http.StatusNotFound, models.DeleteCommentErrorResponse{
+				Message: "Not Found",
+				Error:   "comment not found",
+			})
+			return
+		}
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to get comment from store")
+		c.JSON(http.StatusInternalServerError, models.DeleteCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to get comment",
+		})
+		return
+	}
+
+	if existingComment.AuthorID != user.ID {
+		cc.logger.Error("User is not the author of the comment.")
+		c.JSON(http.StatusForbidden, models.DeleteCommentErrorResponse{
+			Message: "Forbidden",
+			Error:   "user is not authorized to delete this comment",
+		})
+		return
+	}
+
+	err = cc.commentStore.DeleteComment(c.Request.Context(), commentID, postID)
+	if err != nil {
+		cc.logger.WithFields(logrus.Fields{"error": err}).Error("Failed to delete comment from store")
+		c.JSON(http.StatusInternalServerError, models.DeleteCommentErrorResponse{
+			Message: "Server Error",
+			Error:   "failed to delete comment",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.DeleteCommentSuccessResponse{
+		Message: "Comment Deleted Successfully",
 	})
 }

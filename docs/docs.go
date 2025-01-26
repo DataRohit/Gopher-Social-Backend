@@ -1040,7 +1040,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comments"
+                    "comments"
                 ],
                 "summary": "Create a new comment on a post",
                 "parameters": [
@@ -1089,7 +1089,81 @@ const docTemplate = `{
                 }
             }
         },
-        "/post/{postID}/comment/update/{commentID}": {
+        "/post/{postID}/comment/{commentID}/delete": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a comment. Requires authentication and user must be the author of the comment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Delete a comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment ID",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/post/{postID}/comment/{commentID}/update": {
             "put": {
                 "security": [
                     {
@@ -1104,7 +1178,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Comments"
+                    "comments"
                 ],
                 "summary": "Update an existing comment",
                 "parameters": [
@@ -2139,6 +2213,26 @@ const docTemplate = `{
                 },
                 "post": {
                     "$ref": "#/definitions/models.Post"
+                }
+            }
+        },
+        "models.DeleteCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeleteCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Comment Deleted Successfully"
                 }
             }
         },
