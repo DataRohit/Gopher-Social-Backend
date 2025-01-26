@@ -13,6 +13,8 @@ type Comment struct {
 	PostID    uuid.UUID `json:"-" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Post      *Post     `json:"post,omitempty"`
 	Content   string    `json:"content" example:"This is a comment content"`
+	Likes     uint      `json:"likes" example:"100"`
+	Dislikes  uint      `json:"dislikes" example:"10"`
 	CreatedAt time.Time `json:"created_at" example:"2025-01-25T12:34:01.159498Z"`
 	UpdatedAt time.Time `json:"updated_at" example:"2025-01-25T12:34:01.159498Z"`
 }

@@ -9,7 +9,7 @@ import (
 type Post struct {
 	ID          uuid.UUID `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	AuthorID    uuid.UUID `json:"-"`
-	Author      *User     `json:"author,omitempty"` // Removed from response as per requirement
+	Author      *User     `json:"author,omitempty"`
 	Title       string    `json:"title" example:"My Awesome Post"`
 	SubTitle    string    `json:"sub_title,omitempty" example:"A Catchy Subtitle"`
 	Description string    `json:"description,omitempty" example:"A brief description of the post."`

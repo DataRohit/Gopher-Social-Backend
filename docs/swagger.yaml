@@ -23,9 +23,15 @@ definitions:
       created_at:
         example: "2025-01-25T12:34:01.159498Z"
         type: string
+      dislikes:
+        example: 10
+        type: integer
       id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+      likes:
+        example: 100
+        type: integer
       post:
         $ref: '#/definitions/models.Post'
       updated_at:
@@ -414,9 +420,7 @@ definitions:
   models.Post:
     properties:
       author:
-        allOf:
-        - $ref: '#/definitions/models.User'
-        description: Removed from response as per requirement
+        $ref: '#/definitions/models.User'
       content:
         example: This is the main content of my post.
         type: string

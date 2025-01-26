@@ -2285,9 +2285,17 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2025-01-25T12:34:01.159498Z"
                 },
+                "dislikes": {
+                    "type": "integer",
+                    "example": 10
+                },
                 "id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "likes": {
+                    "type": "integer",
+                    "example": 100
                 },
                 "post": {
                     "$ref": "#/definitions/models.Post"
@@ -2877,12 +2885,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "author": {
-                    "description": "Removed from response as per requirement",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    ]
+                    "$ref": "#/definitions/models.User"
                 },
                 "content": {
                     "type": "string",
