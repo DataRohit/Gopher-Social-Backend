@@ -150,6 +150,15 @@ definitions:
         example: Post Disliked Successfully
         type: string
     type: object
+  models.FeedPost:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      post:
+        $ref: '#/definitions/models.Post'
+    type: object
   models.FollowUserErrorResponse:
     properties:
       error:
@@ -201,6 +210,21 @@ definitions:
       message:
         example: Comment Retrieved Successfully
         type: string
+    type: object
+  models.GetFeedPostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.GetFeedPostSuccessResponse:
+    properties:
+      message:
+        example: Feed Post with Comments Retrieved Successfully
+        type: string
+      post:
+        $ref: '#/definitions/models.FeedPost'
     type: object
   models.GetFollowersErrorResponse:
     properties:
@@ -1200,6 +1224,45 @@ paths:
           schema:
             $ref: '#/definitions/models.ListFeedErrorResponse'
       summary: List latest posts for feed
+      tags:
+      - feed
+  /feed/{postID}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a specific post by postID along with its comments in
+        paginated form. No authentication required.
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - default: 1
+        description: Page number for comments pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved feed post with comments
+          schema:
+            $ref: '#/definitions/models.GetFeedPostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid Post ID format
+          schema:
+            $ref: '#/definitions/models.GetFeedPostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.GetFeedPostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch feed post with comments
+          schema:
+            $ref: '#/definitions/models.GetFeedPostErrorResponse'
+      summary: Get a specific post with comments for feed
       tags:
       - feed
   /health/postgres:

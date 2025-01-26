@@ -185,15 +185,11 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 			r.level, r.description,
 			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
 			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
-			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
-			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
-			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count,
 			(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.liked = TRUE) as likes,
 			(SELECT COUNT(*) FROM comment_likes cd WHERE cd.comment_id = c.id AND cd.liked = FALSE) as dislikes
 		FROM comments c
 		INNER JOIN users u ON c.author_id = u.id
 		INNER JOIN roles r ON u.role_id = r.id
-		INNER JOIN posts p ON c.post_id = p.id
 		WHERE c.author_id = $1 AND c.post_id = $2
 		ORDER BY c.created_at DESC
 		LIMIT $3 OFFSET $4
@@ -207,14 +203,11 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 		comment := &models.Comment{}
 		comment.Author = &models.User{}
 		comment.Author.Role = &models.Role{}
-		comment.Post = &models.Post{}
 		if err := rows.Scan(
 			&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
 			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
 			&comment.Author.Role.Level, &comment.Author.Role.Description,
 			&comment.Author.Followers, &comment.Author.Following,
-			&comment.Post.ID, &comment.Post.AuthorID, &comment.Post.Title, &comment.Post.SubTitle, &comment.Post.Description, &comment.Post.Content, &comment.Post.CreatedAt, &comment.Post.UpdatedAt,
-			&comment.Post.Likes, &comment.Post.Dislikes,
 			&comment.Likes, &comment.Dislikes,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan comment row: %w", err)
@@ -223,7 +216,7 @@ func (cs *CommentStore) ListCommentsByAuthorIDForPost(ctx context.Context, autho
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error during rows iteration: %w", err)
+		return nil, fmt.Errorf("error during comments rows iteration: %w", err)
 	}
 
 	return comments, nil
@@ -260,4 +253,94 @@ func (cs *CommentStore) ListCommentsByUserIdentifierForPost(ctx context.Context,
 	}
 
 	return cs.ListCommentsByAuthorIDForPost(ctx, user.ID, postID, pageNumber, pageSize)
+}
+
+// ListCommentsByPostID retrieves all comments for a given post from the database with pagination, ordered by creation time.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Number of comments per page.
+//
+// Returns:
+//   - []*models.Comment: List of comments if found.
+//   - error: An error if retrieval fails.
+func (cs *CommentStore) ListCommentsByPostID(ctx context.Context, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	return cs.listCommentsByPostIDOrdered(ctx, postID, pageNumber, pageSize, "c.created_at ASC")
+}
+
+// ListCommentsByPostIDLatestFirst retrieves all comments for a given post from the database with pagination, ordered by creation time, latest first.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Number of comments per page.
+//
+// Returns:
+//   - []*models.Comment: List of comments if found.
+//   - error: An error if retrieval fails.
+func (cs *CommentStore) ListCommentsByPostIDLatestFirst(ctx context.Context, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	return cs.listCommentsByPostIDOrdered(ctx, postID, pageNumber, pageSize, "c.created_at DESC")
+}
+
+// listCommentsByPostIDOrdered is a helper function to retrieve comments for a given post from the database with pagination and custom ordering.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post.
+//   - pageNumber (int): Page number for pagination.
+//   - pageSize (int): Number of comments per page.
+//   - orderBy (string): SQL order by clause.
+//
+// Returns:
+//   - []*models.Comment: List of comments if found.
+//   - error: An error if retrieval fails.
+func (cs *CommentStore) listCommentsByPostIDOrdered(ctx context.Context, postID uuid.UUID, pageNumber int, pageSize int, orderBy string) ([]*models.Comment, error) {
+	var comments []*models.Comment
+	offset := (pageNumber - 1) * pageSize
+
+	rows, err := cs.dbPool.Query(ctx, `
+		SELECT
+			c.id, c.author_id, c.post_id, c.content, c.created_at, c.updated_at,
+			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count,
+			(SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id AND cl.liked = TRUE) as likes,
+			(SELECT COUNT(*) FROM comment_likes cd WHERE cd.comment_id = c.id AND cd.liked = FALSE) as dislikes
+		FROM comments c
+		INNER JOIN users u ON c.author_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE c.post_id = $1
+		ORDER BY `+orderBy+`
+		LIMIT $2 OFFSET $3
+	`, postID, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list comments by post id: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		comment := &models.Comment{}
+		comment.Author = &models.User{}
+		comment.Author.Role = &models.Role{}
+		if err := rows.Scan(
+			&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
+			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
+			&comment.Author.Role.Level, &comment.Author.Role.Description,
+			&comment.Author.Followers, &comment.Author.Following,
+			&comment.Likes, &comment.Dislikes,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan comment row: %w", err)
+		}
+		comments = append(comments, comment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during comments rows iteration: %w", err)
+	}
+
+	return comments, nil
 }

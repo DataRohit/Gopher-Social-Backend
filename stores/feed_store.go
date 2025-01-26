@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/datarohit/gopher-social-backend/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -79,4 +80,100 @@ func (fs *FeedStore) ListLatestPosts(ctx context.Context, pageNumber int, pageSi
 	}
 
 	return posts, nil
+}
+
+// GetPostWithComments retrieves a specific post by postID along with its comments in paginated form for the feed.
+// It includes post details, author information, comment details, and comment author information.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - postID (uuid.UUID): ID of the post to retrieve.
+//   - pageNumber (int): Page number for comments pagination.
+//   - pageSize (int): Number of comments per page.
+//
+// Returns:
+//   - *models.FeedPost: A FeedPost object containing the post and its comments.
+//   - error: An error if the database query fails or post is not found.
+func (fs *FeedStore) GetPostWithComments(ctx context.Context, postID uuid.UUID, pageNumber int, pageSize int) (*models.FeedPost, error) {
+	postStore := NewPostStore(fs.dbPool)
+	commentStore := NewCommentStore(fs.dbPool)
+
+	retrievedPost, err := postStore.GetPostByID(ctx, postID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get post by id: %w", err)
+	}
+
+	comments, err := commentStore.ListCommentsByPostIDLatestFirst(ctx, postID, pageNumber, pageSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list comments for post: %w", err)
+	}
+
+	feedPost := &models.FeedPost{
+		Post:     retrievedPost,
+		Comments: comments,
+	}
+
+	postAuthor, err := fs.getAuthorDetailsForPost(ctx, feedPost.Post.AuthorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get author details for post: %w", err)
+	}
+	feedPost.Post.Author = postAuthor
+
+	for _, comment := range feedPost.Comments {
+		commentAuthor, err := fs.getCommentAuthorDetails(ctx, comment.AuthorID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get author details for comment: %w", err)
+		}
+		comment.Author = commentAuthor
+	}
+
+	return feedPost, nil
+}
+
+// getAuthorDetailsForPost is a helper function to retrieve author details for a post.
+func (fs *FeedStore) getAuthorDetailsForPost(ctx context.Context, authorID uuid.UUID) (*models.User, error) {
+	var author models.User
+	author.Role = &models.Role{}
+	err := fs.dbPool.QueryRow(ctx, `
+		SELECT
+			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1
+	`, authorID).Scan(
+		&author.ID, &author.Username, &author.Email, &author.Banned, &author.IsActive, &author.CreatedAt, &author.UpdatedAt,
+		&author.Role.Level, &author.Role.Description,
+		&author.Followers, &author.Following,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get author details for post: %w", err)
+	}
+	return &author, nil
+}
+
+// getCommentAuthorDetails is a helper function to retrieve author details for a comment.
+func (fs *FeedStore) getCommentAuthorDetails(ctx context.Context, authorID uuid.UUID) (*models.User, error) {
+	var author models.User
+	author.Role = &models.Role{}
+	err := fs.dbPool.QueryRow(ctx, `
+		SELECT
+			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1
+	`, authorID).Scan(
+		&author.ID, &author.Username, &author.Email, &author.Banned, &author.IsActive, &author.CreatedAt, &author.UpdatedAt,
+		&author.Role.Level, &author.Role.Description,
+		&author.Followers, &author.Following,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get author details for comment: %w", err)
+	}
+	return &author, nil
 }

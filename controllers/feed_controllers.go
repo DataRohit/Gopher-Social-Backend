@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,5 +58,64 @@ func (fc *FeedController) ListFeed(c *gin.Context) {
 	c.JSON(http.StatusOK, models.ListFeedSuccessResponse{
 		Message: "Feed Posts Retrieved Successfully",
 		Posts:   posts,
+	})
+}
+
+// GetFeedPost godoc
+// @Summary      Get a specific post with comments for feed
+// @Description  Retrieves a specific post by postID along with its comments in paginated form. No authentication required.
+// @Tags         feed
+// @Accept       json
+// @Produce      json
+// @Param        postID path string true "Post Identifier (Post ID)"
+// @Param        page query integer false "Page number for comments pagination" default(1)
+// @Success      200 {object} models.GetFeedPostSuccessResponse "Successfully retrieved feed post with comments"
+// @Failure      400 {object} models.GetFeedPostErrorResponse "Bad Request - Invalid Post ID format"
+// @Failure      404 {object} models.GetFeedPostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.GetFeedPostErrorResponse "Internal Server Error - Failed to fetch feed post with comments"
+// @Router       /feed/{postID} [get]
+func (fc *FeedController) GetFeedPost(c *gin.Context) {
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		fc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.GetFeedPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "post ID is required in path",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		fc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.GetFeedPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	feedPost, err := fc.feedStore.GetPostWithComments(c, postID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			fc.logger.WithFields(logrus.Fields{"error": err, "postID": postID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.GetFeedPostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			fc.logger.WithFields(logrus.Fields{"error": err, "postID": postID}).Error("Failed to get post with comments from store")
+			c.JSON(http.StatusInternalServerError, models.GetFeedPostErrorResponse{
+				Message: "Failed to Get Feed Post",
+				Error:   "could not retrieve post with comments from database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.GetFeedPostSuccessResponse{
+		Message: "Feed Post with Comments Retrieved Successfully",
+		Post:    feedPost,
 	})
 }

@@ -406,6 +406,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/feed/{postID}": {
+            "get": {
+                "description": "Retrieves a specific post by postID along with its comments in paginated form. No authentication required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feed"
+                ],
+                "summary": "Get a specific post with comments for feed",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for comments pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved feed post with comments",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFeedPostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid Post ID format",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFeedPostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFeedPostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch feed post with comments",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetFeedPostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health/postgres": {
             "get": {
                 "description": "Check if Postgres connection is healthy",
@@ -3101,6 +3158,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.FeedPost": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
+                "post": {
+                    "$ref": "#/definitions/models.Post"
+                }
+            }
+        },
         "models.FollowUserErrorResponse": {
             "type": "object",
             "properties": {
@@ -3177,6 +3248,29 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Comment Retrieved Successfully"
+                }
+            }
+        },
+        "models.GetFeedPostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetFeedPostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Feed Post with Comments Retrieved Successfully"
+                },
+                "post": {
+                    "$ref": "#/definitions/models.FeedPost"
                 }
             }
         },

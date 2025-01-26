@@ -21,10 +21,12 @@ import (
 //
 // Routes:
 //   - GET /feed: Route to get latest posts for feed. No authentication required.
+//   - GET /feed/:postID: Route to get a specific post with comments for feed. No authentication required.
 func FeedRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	feedStore := stores.NewFeedStore(dbPool)
 	feedController := controllers.NewFeedController(feedStore, logger)
 
 	feedRouter := router.Group("/")
 	feedRouter.GET("/feed", middlewares.PaginationMiddleware(), feedController.ListFeed)
+	feedRouter.GET("/feed/:postID", middlewares.PaginationMiddleware(), feedController.GetFeedPost)
 }
