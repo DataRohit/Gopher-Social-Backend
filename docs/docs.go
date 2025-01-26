@@ -1089,6 +1089,74 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/comment/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of comments liked by the logged-in user under a specific post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "List liked comments under a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of liked comments under post",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedCommentsUnderPostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedCommentsUnderPostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch liked comments under post",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedCommentsUnderPostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/user/me": {
             "get": {
                 "security": [
@@ -3092,6 +3160,32 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Post"
                     }
+                }
+            }
+        },
+        "models.ListLikedCommentsUnderPostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListLikedCommentsUnderPostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Liked Comments Retrieved Successfully"
                 }
             }
         },

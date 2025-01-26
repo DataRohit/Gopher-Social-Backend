@@ -52,3 +52,14 @@ type UndislikeCommentErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List Liked Comments Under Post Models
+type ListLikedCommentsUnderPostSuccessResponse struct {
+	Message  string     `json:"message" example:"Liked Comments Retrieved Successfully"`
+	Comments []*Comment `json:"comments"`
+}
+
+type ListLikedCommentsUnderPostErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

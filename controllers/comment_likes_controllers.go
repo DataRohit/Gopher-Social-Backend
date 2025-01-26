@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/datarohit/gopher-social-backend/middlewares"
 	"github.com/datarohit/gopher-social-backend/models"
 	"github.com/datarohit/gopher-social-backend/stores"
 	"github.com/gin-gonic/gin"
@@ -515,5 +516,87 @@ func (clc *CommentLikesController) UndislikeComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.UndislikeCommentSuccessResponse{
 		Message: "Comment Undisliked Successfully",
+	})
+}
+
+// ListLikedCommentsUnderPost godoc
+// @Summary      List liked comments under a post
+// @Description  Retrieves a list of comments liked by the logged-in user under a specific post (postID).
+// @Tags         comment_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        postID path string true "Post Identifier (Post ID)"
+// @Param        page query integer false "Page number for pagination" default(1)
+// @Success      200 {object} models.ListLikedCommentsUnderPostSuccessResponse "Successfully retrieved list of liked comments under post"
+// @Failure      400 {object} models.ListLikedCommentsUnderPostErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ListLikedCommentsUnderPostErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.ListLikedCommentsUnderPostErrorResponse "Not Found - Post not found"
+// @Failure      500 {object} models.ListLikedCommentsUnderPostErrorResponse "Internal Server Error - Failed to fetch liked comments under post"
+// @Router       /post/{postID}/comment/liked [get]
+func (clc *CommentLikesController) ListLikedCommentsUnderPost(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		clc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListLikedCommentsUnderPostErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	userModel := userCtx.(*models.User)
+
+	postIDStr := c.Param("postID")
+	if postIDStr == "" {
+		clc.logger.Error("Post ID is required in path")
+		c.JSON(http.StatusBadRequest, models.ListLikedCommentsUnderPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "postID is required path parameter",
+		})
+		return
+	}
+
+	postID, err := uuid.Parse(postIDStr)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postIDStr}).Error("Invalid Post ID format")
+		c.JSON(http.StatusBadRequest, models.ListLikedCommentsUnderPostErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid post ID format",
+		})
+		return
+	}
+
+	_, err = clc.postStore.GetPostByID(c, postID)
+	if err != nil {
+		if errors.Is(err, stores.ErrPostNotFound) {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Post not found")
+			c.JSON(http.StatusNotFound, models.ListLikedCommentsUnderPostErrorResponse{
+				Message: "Post Not Found",
+				Error:   "post not found",
+			})
+		} else {
+			clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get post from store")
+			c.JSON(http.StatusInternalServerError, models.ListLikedCommentsUnderPostErrorResponse{
+				Message: "Failed to Get Liked Comments",
+				Error:   "could not retrieve post from database",
+			})
+		}
+		return
+	}
+
+	pageNumber := c.GetInt(middlewares.PageNumberKey)
+	comments, err := clc.commentLikesStore.ListLikedCommentsByUserIDForPost(c, userModel.ID, postID, pageNumber, middlewares.PageSize)
+	if err != nil {
+		clc.logger.WithFields(logrus.Fields{"error": err, "postID": postID, "userID": userModel.ID}).Error("Failed to get liked comments under post from store")
+		c.JSON(http.StatusInternalServerError, models.ListLikedCommentsUnderPostErrorResponse{
+			Message: "Failed to Get Liked Comments",
+			Error:   "could not retrieve liked comments from database",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListLikedCommentsUnderPostSuccessResponse{
+		Message:  "Liked Comments Retrieved Successfully",
+		Comments: comments,
 	})
 }

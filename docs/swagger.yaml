@@ -358,6 +358,23 @@ definitions:
           $ref: '#/definitions/models.Post'
         type: array
     type: object
+  models.ListLikedCommentsUnderPostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListLikedCommentsUnderPostSuccessResponse:
+    properties:
+      comments:
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
+      message:
+        example: Liked Comments Retrieved Successfully
+        type: string
+    type: object
   models.ListLikedPostsErrorResponse:
     properties:
       error:
@@ -1684,6 +1701,52 @@ paths:
       summary: Create a new comment on a post
       tags:
       - comments
+  /post/{postID}/comment/liked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of comments liked by the logged-in user under
+        a specific post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of liked comments under post
+          schema:
+            $ref: '#/definitions/models.ListLikedCommentsUnderPostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListLikedCommentsUnderPostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListLikedCommentsUnderPostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.ListLikedCommentsUnderPostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch liked comments under
+            post
+          schema:
+            $ref: '#/definitions/models.ListLikedCommentsUnderPostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List liked comments under a post
+      tags:
+      - comment_likes
   /post/{postID}/comment/user/{identifier}:
     get:
       consumes:

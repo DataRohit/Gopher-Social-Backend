@@ -199,3 +199,49 @@ func (cls *CommentLikeStore) UndislikeComment(ctx context.Context, userID uuid.U
 
 	return nil
 }
+
+// ListLikedCommentsByUserIDForPost retrieves all comments liked by a user under a specific post from the database with pagination.
+// It returns a list of comments with author information.
+func (cls *CommentLikeStore) ListLikedCommentsByUserIDForPost(ctx context.Context, userID uuid.UUID, postID uuid.UUID, pageNumber int, pageSize int) ([]*models.Comment, error) {
+	offset := (pageNumber - 1) * pageSize
+	rows, err := cls.dbPool.Query(ctx, `
+		SELECT
+			c.id, c.author_id, c.post_id, c.content, c.created_at, c.updated_at,
+			u.id, u.username, u.email, u.banned, u.is_active, u.created_at, u.updated_at,
+			r.level, r.description,
+			(SELECT COUNT(*) FROM follows WHERE followee_id = u.id) as followers_count,
+			(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) as following_count
+		FROM comment_likes cl
+		INNER JOIN comments c ON cl.comment_id = c.id
+		INNER JOIN users u ON c.author_id = u.id
+		INNER JOIN roles r ON u.role_id = r.id
+		WHERE cl.user_id = $1 AND c.post_id = $2 AND cl.liked = TRUE
+		ORDER BY c.created_at DESC
+		LIMIT $3 OFFSET $4
+	`, userID, postID, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list liked comments for post: %w", err)
+	}
+	defer rows.Close()
+
+	var comments []*models.Comment
+	for rows.Next() {
+		comment := &models.Comment{Author: &models.User{Role: &models.Role{}}}
+		err := rows.Scan(
+			&comment.ID, &comment.AuthorID, &comment.PostID, &comment.Content, &comment.CreatedAt, &comment.UpdatedAt,
+			&comment.Author.ID, &comment.Author.Username, &comment.Author.Email, &comment.Author.Banned, &comment.Author.IsActive, &comment.Author.CreatedAt, &comment.Author.UpdatedAt,
+			&comment.Author.Role.Level, &comment.Author.Role.Description,
+			&comment.Author.Followers, &comment.Author.Following,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan comment row: %w", err)
+		}
+		comments = append(comments, comment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during comments rows iteration: %w", err)
+	}
+
+	return comments, nil
+}
