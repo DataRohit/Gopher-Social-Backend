@@ -164,6 +164,7 @@ To regenerate the documentation after making changes to the codebase, run:
 ```bash
 make gen-docs
 ```
+![Swagger UI Demo](./assets/images/Swagger-UI-01-26-2025_11_21_PM.png)
 
 ## Health Check Script 🩺
 
