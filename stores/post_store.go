@@ -84,11 +84,14 @@ func (ps *PostStore) GetPostByID(ctx context.Context, postID uuid.UUID) (*models
 	var post models.Post
 	err := ps.dbPool.QueryRow(ctx, `
 		SELECT
-			id, author_id, title, sub_title, description, content, created_at, updated_at
-		FROM posts
+			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
+			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
+			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count
+		FROM posts p
 		WHERE id = $1
 	`, postID).Scan(
 		&post.ID, &post.AuthorID, &post.Title, &post.SubTitle, &post.Description, &post.Content, &post.CreatedAt, &post.UpdatedAt,
+		&post.Likes, &post.Dislikes,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -172,8 +175,10 @@ func (ps *PostStore) DeletePost(ctx context.Context, postID uuid.UUID) error {
 func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID) ([]*models.Post, error) {
 	rows, err := ps.dbPool.Query(ctx, `
 		SELECT
-			id, author_id, title, sub_title, description, content, created_at, updated_at
-		FROM posts
+			p.id, p.author_id, p.title, p.sub_title, p.description, p.content, p.created_at, p.updated_at,
+			(SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id AND pl.liked = TRUE) as likes_count,
+			(SELECT COUNT(*) FROM post_likes pd WHERE pd.post_id = p.id AND pd.liked = FALSE) as dislikes_count
+		FROM posts p
 		WHERE author_id = $1
 		ORDER BY created_at DESC
 	`, authorID)
@@ -187,6 +192,7 @@ func (ps *PostStore) ListPostsByAuthorID(ctx context.Context, authorID uuid.UUID
 		post := &models.Post{}
 		err := rows.Scan(
 			&post.ID, &post.AuthorID, &post.Title, &post.SubTitle, &post.Description, &post.Content, &post.CreatedAt, &post.UpdatedAt,
+			&post.Likes, &post.Dislikes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan post row: %w", err)
