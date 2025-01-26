@@ -13,6 +13,19 @@ definitions:
         example: User Activated Successfully
         type: string
     type: object
+  models.BanUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.BanUserSuccessResponse:
+    properties:
+      message:
+        example: User Banned Successfully
+        type: string
+    type: object
   models.Comment:
     properties:
       author:
@@ -754,6 +767,19 @@ definitions:
         example: User Timed Out Successfully
         type: string
     type: object
+  models.UnbanUserErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UnbanUserSuccessResponse:
+    properties:
+      message:
+        example: User Unbanned Successfully
+        type: string
+    type: object
   models.UndislikeCommentErrorResponse:
     properties:
       error:
@@ -1084,6 +1110,50 @@ paths:
       summary: Activate a user
       tags:
       - action
+  /action/ban/{userID}:
+    post:
+      consumes:
+      - application/json
+      description: Bans a user, deactivates them and deletes all their posts.
+      parameters:
+      - description: User ID to ban
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully banned user
+          schema:
+            $ref: '#/definitions/models.BanUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.BanUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.BanUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            be banned by requester
+          schema:
+            $ref: '#/definitions/models.BanUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.BanUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to ban user
+          schema:
+            $ref: '#/definitions/models.BanUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Ban a user
+      tags:
+      - action
   /action/deactivate/{userID}:
     delete:
       consumes:
@@ -1256,6 +1326,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Timeout a user
+      tags:
+      - action
+  /action/unban/{userID}:
+    post:
+      consumes:
+      - application/json
+      description: Unbans a user, only sets the banned status to false.
+      parameters:
+      - description: User ID to unban
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully unbanned user
+          schema:
+            $ref: '#/definitions/models.UnbanUserSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UnbanUserErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UnbanUserErrorResponse'
+        "403":
+          description: Forbidden - Insufficient permissions or target user cannot
+            be unbanned by requester
+          schema:
+            $ref: '#/definitions/models.UnbanUserErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.UnbanUserErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to unban user
+          schema:
+            $ref: '#/definitions/models.UnbanUserErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unban a user
       tags:
       - action
   /auth/activate:

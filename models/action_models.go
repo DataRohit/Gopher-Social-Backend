@@ -46,3 +46,23 @@ type DeactivateUserErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// Ban User Models
+type BanUserSuccessResponse struct {
+	Message string `json:"message" example:"User Banned Successfully"`
+}
+
+type BanUserErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// Unban User Models
+type UnbanUserSuccessResponse struct {
+	Message string `json:"message" example:"User Unbanned Successfully"`
+}
+
+type UnbanUserErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}

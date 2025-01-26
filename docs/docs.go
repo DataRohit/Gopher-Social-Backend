@@ -89,6 +89,73 @@ const docTemplate = `{
                 }
             }
         },
+        "/action/ban/{userID}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Bans a user, deactivates them and deletes all their posts.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Ban a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to ban",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully banned user",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions or target user cannot be banned by requester",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to ban user",
+                        "schema": {
+                            "$ref": "#/definitions/models.BanUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/action/deactivate/{userID}": {
             "delete": {
                 "security": [
@@ -347,6 +414,73 @@ const docTemplate = `{
                         "description": "Internal Server Error - Failed to remove user timeout",
                         "schema": {
                             "$ref": "#/definitions/models.RemoveTimeoutUserErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/action/unban/{userID}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Unbans a user, only sets the banned status to false.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "action"
+                ],
+                "summary": "Unban a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to unban",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully unbanned user",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Insufficient permissions or target user cannot be unbanned by requester",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to unban user",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnbanUserErrorResponse"
                         }
                     }
                 }
@@ -3286,6 +3420,26 @@ const docTemplate = `{
                 }
             }
         },
+        "models.BanUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.BanUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Banned Successfully"
+                }
+            }
+        },
         "models.Comment": {
             "type": "object",
             "properties": {
@@ -4389,6 +4543,26 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "User Timed Out Successfully"
+                }
+            }
+        },
+        "models.UnbanUserErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UnbanUserSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User Unbanned Successfully"
                 }
             }
         },

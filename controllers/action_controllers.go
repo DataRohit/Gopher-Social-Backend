@@ -553,3 +553,203 @@ func (ac *ActionController) ActivateUser(c *gin.Context) {
 		Message: "User Activated Successfully",
 	})
 }
+
+// UnbanUser godoc
+// @Summary      Unban a user
+// @Description  Unbans a user, only sets the banned status to false.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        userID path string true "User ID to unban"
+// @Success      200 {object} models.UnbanUserSuccessResponse "Successfully unbanned user"
+// @Failure      400 {object} models.UnbanUserErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.UnbanUserErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.UnbanUserErrorResponse "Forbidden - Insufficient permissions or target user cannot be unbanned by requester"
+// @Failure      404 {object} models.UnbanUserErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.UnbanUserErrorResponse "Internal Server Error - Failed to unban user"
+// @Router       /action/unban/{userID} [post]
+func (ac *ActionController) UnbanUser(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.UnbanUserErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	targetUserIDStr := c.Param("userID")
+	if targetUserIDStr == "" {
+		ac.logger.Error("Target User ID is required in path")
+		c.JSON(http.StatusBadRequest, models.UnbanUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "target userID is required path parameter",
+		})
+		return
+	}
+
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": targetUserIDStr}).Error("Invalid Target User ID format")
+		c.JSON(http.StatusBadRequest, models.UnbanUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid target userID format",
+		})
+		return
+	}
+
+	targetUser, err := ac.authStore.GetUserByID(c, targetUserID)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Target user not found")
+			c.JSON(http.StatusNotFound, models.UnbanUserErrorResponse{
+				Message: "User Not Found",
+				Error:   "target user not found",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to get target user from store")
+			c.JSON(http.StatusInternalServerError, models.UnbanUserErrorResponse{
+				Message: "Failed to Unban User",
+				Error:   "could not retrieve user details",
+			})
+		}
+		return
+	}
+
+	if requestingUser.Role.Level != 3 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.UnbanUserErrorResponse{
+			Message: "Forbidden",
+			Error:   "insufficient permissions",
+		})
+		return
+	}
+
+	if requestingUser.Role.Level == 3 {
+		if targetUser.Role.Level == 3 {
+			ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level, "targetUserID": targetUserID, "targetUserRole": targetUser.Role.Level}).Error("Admin cannot unban another admin")
+			c.JSON(http.StatusForbidden, models.UnbanUserErrorResponse{
+				Message: "Forbidden",
+				Error:   stores.ErrAdminCannotUnbanAdmin.Error(),
+			})
+			return
+		}
+	}
+
+	err = ac.actionStore.UnbanUser(c, targetUserID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to unban user in store")
+		c.JSON(http.StatusInternalServerError, models.UnbanUserErrorResponse{
+			Message: "Failed to Unban User",
+			Error:   "could not unban user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.UnbanUserSuccessResponse{
+		Message: "User Unbanned Successfully",
+	})
+}
+
+// BanUser godoc
+// @Summary      Ban a user
+// @Description  Bans a user, deactivates them and deletes all their posts.
+// @Tags         action
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        userID path string true "User ID to ban"
+// @Success      200 {object} models.BanUserSuccessResponse "Successfully banned user"
+// @Failure      400 {object} models.BanUserErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.BanUserErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      403 {object} models.BanUserErrorResponse "Forbidden - Insufficient permissions or target user cannot be banned by requester"
+// @Failure      404 {object} models.BanUserErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.BanUserErrorResponse "Internal Server Error - Failed to ban user"
+// @Router       /action/ban/{userID} [post]
+func (ac *ActionController) BanUser(c *gin.Context) {
+	userCtx, exists := c.Get("user")
+	if !exists {
+		ac.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.BanUserErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+	requestingUser := userCtx.(*models.User)
+
+	targetUserIDStr := c.Param("userID")
+	if targetUserIDStr == "" {
+		ac.logger.Error("Target User ID is required in path")
+		c.JSON(http.StatusBadRequest, models.BanUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "target userID is required path parameter",
+		})
+		return
+	}
+
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "userID": targetUserIDStr}).Error("Invalid Target User ID format")
+		c.JSON(http.StatusBadRequest, models.BanUserErrorResponse{
+			Message: "Invalid Request",
+			Error:   "invalid target userID format",
+		})
+		return
+	}
+
+	targetUser, err := ac.authStore.GetUserByID(c, targetUserID)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Target user not found")
+			c.JSON(http.StatusNotFound, models.BanUserErrorResponse{
+				Message: "User Not Found",
+				Error:   "target user not found",
+			})
+		} else {
+			ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to get target user from store")
+			c.JSON(http.StatusInternalServerError, models.BanUserErrorResponse{
+				Message: "Failed to Ban User",
+				Error:   "could not retrieve user details",
+			})
+		}
+		return
+	}
+
+	if requestingUser.Role.Level != 3 {
+		ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level}).Error("Unauthorized user role")
+		c.JSON(http.StatusForbidden, models.BanUserErrorResponse{
+			Message: "Forbidden",
+			Error:   "insufficient permissions",
+		})
+		return
+	}
+
+	if requestingUser.Role.Level == 3 {
+		if targetUser.Role.Level == 3 {
+			ac.logger.WithFields(logrus.Fields{"requestingUserID": requestingUser.ID, "requestingUserRole": requestingUser.Role.Level, "targetUserID": targetUserID, "targetUserRole": targetUser.Role.Level}).Error("Admin cannot ban another admin")
+			c.JSON(http.StatusForbidden, models.BanUserErrorResponse{
+				Message: "Forbidden",
+				Error:   stores.ErrAdminCannotBanAdmin.Error(),
+			})
+			return
+		}
+	}
+
+	err = ac.actionStore.BanUser(c, targetUserID)
+	if err != nil {
+		ac.logger.WithFields(logrus.Fields{"error": err, "targetUserID": targetUserID, "requestingUserID": requestingUser.ID}).Error("Failed to ban user in store")
+		c.JSON(http.StatusInternalServerError, models.BanUserErrorResponse{
+			Message: "Failed to Ban User",
+			Error:   "could not ban user",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.BanUserSuccessResponse{
+		Message: "User Banned Successfully",
+	})
+}

@@ -25,6 +25,8 @@ import (
 //   - GET /action/timeout: Route to list all timed out users. Requires moderator or admin role.
 //   - DELETE /action/deactivate/:userID: Route to deactivate a user. Requires moderator or admin role.
 //   - POST /action/activate/:userID: Route to activate a user. Requires moderator or admin role.
+//   - POST /action/ban/:userID: Route to ban a user. Requires admin role.
+//   - POST /action/unban/:userID: Route to unban a user. Requires admin role.
 func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.Logger) {
 	authStore := stores.NewAuthStore(dbPool)
 	actionStore := stores.NewActionStore(dbPool)
@@ -37,4 +39,6 @@ func ActionRoutes(router *gin.RouterGroup, dbPool *pgxpool.Pool, logger *logrus.
 	actionRouter.GET("/timeout", middlewares.PaginationMiddleware(), actionController.ListTimedOutUsers)
 	actionRouter.DELETE("/deactivate/:userID", actionController.DeactivateUser)
 	actionRouter.POST("/activate/:userID", actionController.ActivateUser)
+	actionRouter.POST("/ban/:userID", actionController.BanUser)
+	actionRouter.POST("/unban/:userID", actionController.UnbanUser)
 }

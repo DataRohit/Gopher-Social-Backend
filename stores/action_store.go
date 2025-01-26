@@ -46,6 +46,13 @@ var ErrAdminCannotActivateAdmin = errors.New("admin cannot activate another admi
 // ErrModeratorCannotActivateModeratorOrAdmin is returned when a moderator tries to activate a moderator or admin.
 var ErrModeratorCannotActivateModeratorOrAdmin = errors.New("moderator can only activate normal users")
 
+// ErrAdminCannotBanAdmin is returned when an admin tries to ban another admin.
+var ErrAdminCannotBanAdmin = errors.New("admin cannot ban another admin")
+
+// ErrAdminCannotUnbanAdmin is returned when an admin tries to unban another admin.
+var ErrAdminCannotUnbanAdmin = errors.New("admin cannot unban another admin")
+
+
 // TimeoutUser applies a timeout to a user until the specified time.
 //
 // Parameters:
@@ -187,6 +194,71 @@ func (as *ActionStore) ActivateUser(ctx context.Context, targetUserID uuid.UUID)
 	`, targetUserID)
 	if err != nil {
 		return fmt.Errorf("failed to activate user: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+// BanUser bans a user, deactivates them, deletes their posts, and sets the banned status to true.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - targetUserID (uuid.UUID): ID of the user to ban.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) BanUser(ctx context.Context, targetUserID uuid.UUID) error {
+	tx, err := as.dbPool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Deactivate User and set banned to true
+	_, err = tx.Exec(ctx, `
+		UPDATE users
+		SET is_active = FALSE, banned = TRUE
+		WHERE id = $1
+	`, targetUserID)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate user: %w", err)
+	}
+
+	// Delete User's Posts
+	_, err = tx.Exec(ctx, `
+		DELETE FROM posts
+		WHERE author_id = $1
+	`, targetUserID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user's posts: %w", err)
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// UnbanUser unbans a user by setting their banned status to false.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - targetUserID (uuid.UUID): ID of the user to unban.
+//
+// Returns:
+//   - error: An error if the operation fails.
+func (as *ActionStore) UnbanUser(ctx context.Context, targetUserID uuid.UUID) error {
+	commandTag, err := as.dbPool.Exec(ctx, `
+		UPDATE users
+		SET banned = FALSE
+		WHERE id = $1
+	`, targetUserID)
+	if err != nil {
+		return fmt.Errorf("failed to unban user: %w", err)
 	}
 	if commandTag.RowsAffected() == 0 {
 		return ErrUserNotFound
