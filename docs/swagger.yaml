@@ -302,6 +302,19 @@ definitions:
       profile:
         $ref: '#/definitions/models.Profile'
     type: object
+  models.LikeCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.LikeCommentSuccessResponse:
+    properties:
+      message:
+        example: Comment Liked Successfully
+        type: string
+    type: object
   models.LikePostErrorResponse:
     properties:
       error:
@@ -604,6 +617,19 @@ definitions:
     properties:
       message:
         example: User Unfollowed Successfully
+        type: string
+    type: object
+  models.UnlikeCommentErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UnlikeCommentSuccessResponse:
+    properties:
+      message:
+        example: Comment Unliked Successfully
         type: string
     type: object
   models.UnlikePostErrorResponse:
@@ -1335,6 +1361,107 @@ paths:
       summary: Delete a comment
       tags:
       - comments
+  /post/{postID}/comment/{commentID}/like:
+    delete:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to unlike a comment by comment identifier
+        (commentID) under a post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment Identifier (Comment ID)
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully unliked comment
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentErrorResponse'
+        "404":
+          description: Not Found - Post or Comment not found or like not found
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to unlike comment
+          schema:
+            $ref: '#/definitions/models.UnlikeCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unlike a comment
+      tags:
+      - comment_likes
+    post:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to like a comment by comment identifier
+        (commentID) under a post (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment Identifier (Comment ID)
+        in: path
+        name: commentID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully liked comment
+          schema:
+            $ref: '#/definitions/models.LikeCommentSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+        "404":
+          description: Not Found - Post or Comment not found
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+        "409":
+          description: Conflict - Already liked comment
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to like comment
+          schema:
+            $ref: '#/definitions/models.LikeCommentErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Like a comment
+      tags:
+      - comment_likes
   /post/{postID}/comment/{commentID}/update:
     put:
       consumes:

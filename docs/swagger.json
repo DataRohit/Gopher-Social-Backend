@@ -1326,6 +1326,158 @@
                 }
             }
         },
+        "/post/{postID}/comment/{commentID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to like a comment by comment identifier (commentID) under a post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "Like a comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment Identifier (Comment ID)",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully liked comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post or Comment not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Already liked comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to like comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikeCommentErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to unlike a comment by comment identifier (commentID) under a post (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comment_likes"
+                ],
+                "summary": "Unlike a comment",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Comment Identifier (Comment ID)",
+                        "name": "commentID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully unliked comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post or Comment not found or like not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to unlike comment",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikeCommentErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}/comment/{commentID}/update": {
             "put": {
                 "security": [
@@ -2699,6 +2851,26 @@
                 }
             }
         },
+        "models.LikeCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LikeCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Comment Liked Successfully"
+                }
+            }
+        },
         "models.LikePostErrorResponse": {
             "type": "object",
             "properties": {
@@ -3144,6 +3316,26 @@
                 "message": {
                     "type": "string",
                     "example": "User Unfollowed Successfully"
+                }
+            }
+        },
+        "models.UnlikeCommentErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UnlikeCommentSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Comment Unliked Successfully"
                 }
             }
         },
