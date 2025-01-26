@@ -469,3 +469,121 @@ func (plc *PostLikesController) ListDislikedPosts(c *gin.Context) {
 		Posts:   posts,
 	})
 }
+
+// ListLikedPostsByUserIdentifier godoc
+// @Summary      List liked posts of a user by identifier
+// @Description  Retrieves a list of posts liked by a user, identified by username, email, or user ID.
+// @Tags         post_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        identifier path string true "User Identifier (username, email, or user ID)"
+// @Success      200 {object} models.ListLikedPostsSuccessResponse "Successfully retrieved list of liked posts for user"
+// @Failure      400 {object} models.ListLikedPostsErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ListLikedPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.ListLikedPostsErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.ListLikedPostsErrorResponse "Internal Server Error - Failed to fetch liked posts"
+// @Router       /post/user/{identifier}/liked [get]
+func (plc *PostLikesController) ListLikedPostsByUserIdentifier(c *gin.Context) {
+	_, exists := c.Get("user")
+	if !exists {
+		plc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListLikedPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	identifier := c.Param("identifier")
+	if identifier == "" {
+		plc.logger.Error("User Identifier is required in path")
+		c.JSON(http.StatusBadRequest, models.ListLikedPostsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "user identifier is required in path",
+		})
+		return
+	}
+
+	posts, err := plc.postLikesStore.ListLikedPostsByUserIdentifier(c, identifier)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
+			c.JSON(http.StatusNotFound, models.ListLikedPostsErrorResponse{
+				Message: "User Not Found",
+				Error:   "user not found",
+			})
+		} else {
+			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get liked posts by user identifier from store")
+			c.JSON(http.StatusInternalServerError, models.ListLikedPostsErrorResponse{
+				Message: "Failed to Get Liked Posts",
+				Error:   "could not retrieve liked posts from database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListLikedPostsSuccessResponse{
+		Message: "Liked Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}
+
+// ListDislikedPostsByUserIdentifier godoc
+// @Summary      List disliked posts of a user by identifier
+// @Description  Retrieves a list of posts disliked by a user, identified by username, email, or user ID.
+// @Tags         post_likes
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        identifier path string true "User Identifier (username, email, or user ID)"
+// @Success      200 {object} models.ListDislikedPostsSuccessResponse "Successfully retrieved list of disliked posts for user"
+// @Failure      400 {object} models.ListDislikedPostsErrorResponse "Bad Request - Invalid input"
+// @Failure      401 {object} models.ListDislikedPostsErrorResponse "Unauthorized - User not logged in or invalid token"
+// @Failure      404 {object} models.ListDislikedPostsErrorResponse "Not Found - User not found"
+// @Failure      500 {object} models.ListDislikedPostsErrorResponse "Internal Server Error - Failed to fetch disliked posts"
+// @Router       /post/user/{identifier}/disliked [get]
+func (plc *PostLikesController) ListDislikedPostsByUserIdentifier(c *gin.Context) {
+	_, exists := c.Get("user")
+	if !exists {
+		plc.logger.Error("User not found in context. Middleware misconfiguration.")
+		c.JSON(http.StatusUnauthorized, models.ListDislikedPostsErrorResponse{
+			Message: "Unauthorized",
+			Error:   "user not authenticated",
+		})
+		return
+	}
+
+	identifier := c.Param("identifier")
+	if identifier == "" {
+		plc.logger.Error("User Identifier is required in path")
+		c.JSON(http.StatusBadRequest, models.ListDislikedPostsErrorResponse{
+			Message: "Invalid Request",
+			Error:   "user identifier is required in path",
+		})
+		return
+	}
+
+	posts, err := plc.postLikesStore.ListDislikedPostsByUserIdentifier(c, identifier)
+	if err != nil {
+		if errors.Is(err, stores.ErrUserNotFound) {
+			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("User not found")
+			c.JSON(http.StatusNotFound, models.ListDislikedPostsErrorResponse{
+				Message: "User Not Found",
+				Error:   "user not found",
+			})
+		} else {
+			plc.logger.WithFields(logrus.Fields{"error": err, "identifier": identifier}).Error("Failed to get disliked posts by user identifier from store")
+			c.JSON(http.StatusInternalServerError, models.ListDislikedPostsErrorResponse{
+				Message: "Failed to Get Disliked Posts",
+				Error:   "could not retrieve disliked posts from database",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, models.ListDislikedPostsSuccessResponse{
+		Message: "Disliked Posts Retrieved Successfully",
+		Posts:   posts,
+	})
+}

@@ -1448,6 +1448,86 @@ paths:
       summary: List posts by user identifier
       tags:
       - posts
+  /post/user/{identifier}/disliked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts disliked by a user, identified by username,
+        email, or user ID.
+      parameters:
+      - description: User Identifier (username, email, or user ID)
+        in: path
+        name: identifier
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of disliked posts for user
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch disliked posts
+          schema:
+            $ref: '#/definitions/models.ListDislikedPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List disliked posts of a user by identifier
+      tags:
+      - post_likes
+  /post/user/{identifier}/liked:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of posts liked by a user, identified by username,
+        email, or user ID.
+      parameters:
+      - description: User Identifier (username, email, or user ID)
+        in: path
+        name: identifier
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved list of liked posts for user
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch liked posts
+          schema:
+            $ref: '#/definitions/models.ListLikedPostsErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List liked posts of a user by identifier
+      tags:
+      - post_likes
   /profile/{identifier}:
     get:
       consumes:

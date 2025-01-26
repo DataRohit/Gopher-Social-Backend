@@ -684,6 +684,128 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/user/{identifier}/disliked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts disliked by a user, identified by username, email, or user ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "List disliked posts of a user by identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of disliked posts for user",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch disliked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListDislikedPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/post/user/{identifier}/liked": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of posts liked by a user, identified by username, email, or user ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "List liked posts of a user by identifier",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User Identifier (username, email, or user ID)",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved list of liked posts for user",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch liked posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListLikedPostsErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/post/{postID}": {
             "get": {
                 "security": [

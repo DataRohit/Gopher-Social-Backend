@@ -259,6 +259,58 @@ func (pls *PostLikeStore) ListDislikedPostsByUserID(ctx context.Context, userID 
 	return pls.listPostsByLikeStatus(ctx, userID, false)
 }
 
+// ListLikedPostsByUserIdentifier retrieves all liked posts of a user by user identifier (username, email, or user ID).
+// It resolves the user identifier to a user ID and then fetches the liked posts for that user.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username, email, or user ID of the user.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no liked posts are found for the user.
+//   - error: ErrUserNotFound if user is not found, or other errors during database query.
+func (pls *PostLikeStore) ListLikedPostsByUserIdentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, true)
+}
+
+// ListDislikedPostsByUserIdentifier retrieves all disliked posts of a user by user identifier (username, email, or user ID).
+// It resolves the user identifier to a user ID and then fetches the disliked posts for that user.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username, email, or user ID of the user.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no disliked posts are found for the user.
+//   - error: ErrUserNotFound if user is not found, or other errors during database query.
+func (pls *PostLikeStore) ListDislikedPostsByUserIdentifier(ctx context.Context, identifier string) ([]*models.Post, error) {
+	return pls.listPostsByLikeStatusByIdentifier(ctx, identifier, false)
+}
+
+// listPostsByLikeStatusByIdentifier is a helper function to retrieve posts based on like status (liked or disliked) for a user identified by identifier.
+// It is used by ListLikedPostsByUserIdentifier and ListDislikedPostsByUserIdentifier to avoid code duplication.
+//
+// Parameters:
+//   - ctx (context.Context): Context for the database operation.
+//   - identifier (string): Username, email, or user ID of the user.
+//   - liked (bool): True to retrieve liked posts, false for disliked posts.
+//
+// Returns:
+//   - []*models.Post: A slice of Post pointers, or nil if no posts are found for the given like status and user identifier.
+//   - error: ErrUserNotFound if user is not found, or other errors during database query.
+func (pls *PostLikeStore) listPostsByLikeStatusByIdentifier(ctx context.Context, identifier string, liked bool) ([]*models.Post, error) {
+	authStore := NewAuthStore(pls.dbPool) // Create a new AuthStore instance
+	user, err := authStore.GetUserByUsernameOrEmail(ctx, identifier)
+	if err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to get user by identifier: %w", err)
+	}
+
+	return pls.listPostsByLikeStatus(ctx, user.ID, liked)
+}
+
 // listPostsByLikeStatus is a helper function to retrieve posts based on like status (liked or disliked).
 // It is used by ListLikedPostsByUserID and ListDislikedPostsByUserID to avoid code duplication.
 //

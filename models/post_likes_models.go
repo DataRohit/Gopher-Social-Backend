@@ -82,3 +82,25 @@ type ListDislikedPostsErrorResponse struct {
 	Message string `json:"message"`
 	Error   string `json:"error,omitempty"`
 }
+
+// List User Liked Posts Models
+type ListLikedPostsByUserIdentifierSuccessResponse struct {
+	Message string  `json:"message" example:"Liked Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListLikedPostsByUserIdentifierErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+// List User Disliked Posts Models
+type ListDislikedPostsByUserIdentifierSuccessResponse struct {
+	Message string  `json:"message" example:"Disliked Posts Retrieved Successfully"`
+	Posts   []*Post `json:"posts"`
+}
+
+type ListDislikedPostsByUserIdentifierErrorResponse struct {
+	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
