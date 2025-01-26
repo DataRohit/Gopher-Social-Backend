@@ -211,6 +211,19 @@ definitions:
       profile:
         $ref: '#/definitions/models.Profile'
     type: object
+  models.LikePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.LikePostSuccessResponse:
+    properties:
+      message:
+        example: Post Liked Successfully
+        type: string
+    type: object
   models.ListMyPostsErrorResponse:
     properties:
       error:
@@ -421,6 +434,19 @@ definitions:
     properties:
       message:
         example: User Unfollowed Successfully
+        type: string
+    type: object
+  models.UnlikePostErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.UnlikePostSuccessResponse:
+    properties:
+      message:
+        example: Post Unliked Successfully
         type: string
     type: object
   models.UpdatePostErrorResponse:
@@ -1027,6 +1053,96 @@ paths:
       summary: Update an existing post
       tags:
       - posts
+  /post/{postID}/like:
+    post:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to like a post by post identifier (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully liked post
+          schema:
+            $ref: '#/definitions/models.LikePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+        "404":
+          description: Not Found - Post not found
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+        "409":
+          description: Conflict - Already liked post
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to like post
+          schema:
+            $ref: '#/definitions/models.LikePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Like a post
+      tags:
+      - post_likes
+  /post/{postID}/unlike:
+    delete:
+      consumes:
+      - application/json
+      description: Allows a logged-in user to unlike a post by post identifier (postID).
+      parameters:
+      - description: Post Identifier (Post ID)
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully unliked post
+          schema:
+            $ref: '#/definitions/models.UnlikePostSuccessResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "401":
+          description: Unauthorized - User not logged in or invalid token
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "403":
+          description: Forbidden - User account is inactive or banned
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "404":
+          description: Not Found - Post not found or like not found
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+        "500":
+          description: Internal Server Error - Failed to unlike post
+          schema:
+            $ref: '#/definitions/models.UnlikePostErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Unlike a post
+      tags:
+      - post_likes
   /post/create:
     post:
       consumes:

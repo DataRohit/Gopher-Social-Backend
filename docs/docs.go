@@ -798,6 +798,146 @@ const docTemplate = `{
                 }
             }
         },
+        "/post/{postID}/like": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to like a post by post identifier (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "Like a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully liked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict - Already liked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to like post",
+                        "schema": {
+                            "$ref": "#/definitions/models.LikePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/post/{postID}/unlike": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Allows a logged-in user to unlike a post by post identifier (postID).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "post_likes"
+                ],
+                "summary": "Unlike a post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post Identifier (Post ID)",
+                        "name": "postID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully unliked post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostSuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - User not logged in or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - User account is inactive or banned",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - Post not found or like not found",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to unlike post",
+                        "schema": {
+                            "$ref": "#/definitions/models.UnlikePostErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile/me": {
             "get": {
                 "security": [
@@ -1643,6 +1783,26 @@ const docTemplate = `{
                 }
             }
         },
+        "models.LikePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LikePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Liked Successfully"
+                }
+            }
+        },
         "models.ListMyPostsErrorResponse": {
             "type": "object",
             "properties": {
@@ -1949,6 +2109,26 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "User Unfollowed Successfully"
+                }
+            }
+        },
+        "models.UnlikePostErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UnlikePostSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Post Unliked Successfully"
                 }
             }
         },
