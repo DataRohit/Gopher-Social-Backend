@@ -375,6 +375,23 @@ definitions:
           $ref: '#/definitions/models.Post'
         type: array
     type: object
+  models.ListFeedErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  models.ListFeedSuccessResponse:
+    properties:
+      message:
+        example: Feed Posts Retrieved Successfully
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+    type: object
   models.ListLikedCommentsUnderPostErrorResponse:
     properties:
       error:
@@ -1159,6 +1176,32 @@ paths:
       summary: Reset user password
       tags:
       - auth
+  /feed:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of the latest posts for the feed. No
+        authentication required.
+      parameters:
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved feed posts
+          schema:
+            $ref: '#/definitions/models.ListFeedSuccessResponse'
+        "500":
+          description: Internal Server Error - Failed to fetch feed posts
+          schema:
+            $ref: '#/definitions/models.ListFeedErrorResponse'
+      summary: List latest posts for feed
+      tags:
+      - feed
   /health/postgres:
     get:
       description: Check if Postgres connection is healthy

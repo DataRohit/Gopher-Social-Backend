@@ -368,6 +368,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/feed": {
+            "get": {
+                "description": "Retrieves a paginated list of the latest posts for the feed. No authentication required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feed"
+                ],
+                "summary": "List latest posts for feed",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number for pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully retrieved feed posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListFeedSuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Failed to fetch feed posts",
+                        "schema": {
+                            "$ref": "#/definitions/models.ListFeedErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health/postgres": {
             "get": {
                 "description": "Check if Postgres connection is healthy",
@@ -3398,6 +3436,32 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Disliked Posts Retrieved Successfully"
+                },
+                "posts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Post"
+                    }
+                }
+            }
+        },
+        "models.ListFeedErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ListFeedSuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Feed Posts Retrieved Successfully"
                 },
                 "posts": {
                     "type": "array",
